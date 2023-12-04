@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from typing import Annotated
-
-from fastapi import Depends, FastAPI, HTTPException, Security, status
+from fastapi import Depends, FastAPI, HTTPException, Security, status, Form
 from fastapi.security import (
     OAuth2PasswordBearer,
     OAuth2PasswordRequestForm,
+    OAuth2AuthorizationCodeBearer,
     SecurityScopes,
 )
 from jose import JWTError, jwt
@@ -37,6 +37,13 @@ fake_users_db = {
     },
 }
 
+class OAuth2AuthorizationCodeRequestForm(BaseModel):
+    client_id: str
+    scopes: list[str] = []
+
+class LoginRequestForm(BaseModel):
+    username: str
+    password: str
 
 class Token(BaseModel):
     access_token: str
@@ -47,6 +54,9 @@ class TokenData(BaseModel):
     username: str | None = None
     scopes: list[str] = []
 
+
+class AuthorizationCode(BaseModel):
+    authorization_code: str
 
 class User(BaseModel):
     username: str
@@ -66,6 +76,13 @@ oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
     scopes={"me": "Read information about the current user.", "items": "Read items."},
 )
+
+oauth2_scheme = OAuth2AuthorizationCodeBearer(
+    authorizationUrl="authorization",
+    tokenUrl="token",
+    scopes={"me": "Read information about the current user.", "items": "Read items."},
+)
+
 
 app = FastAPI()
 
@@ -105,7 +122,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 
 async def get_current_user(
-    security_scopes: SecurityScopes, token: Annotated[str, Depends(oauth2_scheme)]
+        security_scopes: SecurityScopes, token: Annotated[str, Depends(oauth2_scheme)]
 ):
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
@@ -139,18 +156,36 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: Annotated[User, Security(get_current_user, scopes=["me"])]
+        current_user: Annotated[User, Security(get_current_user, scopes=["me"])]
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+@app.get("/login")  #pagina di login in cui inserire i parametri
+async def login_for_authentication(
+        form_data: Annotated[LoginRequestForm, Depends()]
+):
+    print("")
+
+
+@app.get("/authorization", response_model=AuthorizationCode)
+async def login_for_authorization_code(
+        form_data: Annotated[OAuth2AuthorizationCodeRequestForm, Depends()]
+):
+    print(form_data)
+    return {"authorization_code": "vsanvkm"}
+
+
+
+
 
 @app.post("/token", response_model=Token)
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+        form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ):
     user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    print(form_data)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -164,14 +199,14 @@ async def login_for_access_token(
 
 @app.get("/users/me/", response_model=User)
 async def read_users_me(
-    current_user: Annotated[User, Depends(get_current_active_user)]
+        current_user: Annotated[User, Depends(get_current_active_user)]
 ):
     return current_user
 
 
 @app.get("/users/me/items/")
 async def read_own_items(
-    current_user: Annotated[User, Security(get_current_active_user, scopes=["items"])]
+        current_user: Annotated[User, Security(get_current_active_user, scopes=["items"])]
 ):
     return [{"item_id": "Foo", "owner": current_user.username}]
 
