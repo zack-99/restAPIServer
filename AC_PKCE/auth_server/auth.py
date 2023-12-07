@@ -8,6 +8,7 @@ from jwt import (
 )
 import secrets
 import time
+from passlib.context import CryptContext
 
 from cryptography.fernet import Fernet
 
@@ -22,6 +23,8 @@ authorization_codes = {}
 
 f = Fernet(KEY)
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 #with open('private.pem', 'rb') as file:
 #  private_key = file.read()
 with open('../API_server/public.pem', 'rb') as fh:
@@ -30,13 +33,54 @@ with open('../API_server/public.pem', 'rb') as fh:
 with open('private.pem', 'rb') as fh:
     private_key = jwk_from_pem(fh.read())
 
-def authenticate_user_credentials(username, password):
+users_db = {
+  #password: secret
+  "user1": { 'username': 'user1', 'password': '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW' },
+  #password: ciao
+  "user2": { 'username': 'user2', 'password': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6' }
+}
+
+clients_db = {
+  #client_secret: secret
+  "sample-client-id": { 'client_secret': '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'redirect_urls': [
+    "http://localhost:5000/callback"
+  ] },
+  #client_secret: ciao
+  "sample-client-id-2": { 'client_secret': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6', 'redirect_urls': [
+    "http://localhost:5000/callback"
+  ] }
+}
+
+def verify_password(plain_password, hashed_password):
+  return pwd_context.verify(plain_password, hashed_password)
+
+def get_db_entry(db, id: str):
+  if id in db:
+    entry = db[id]
+    return entry
+
+def authenticate_user_credentials(username: str, password: str):
+  user = get_db_entry(users_db, username)
+  if not user:
+      return False
+  if not verify_password(password, user['password']):
+      return False
   return True
 
 def authenticate_client(client_id, client_secret):
+  client = get_db_entry(clients_db, client_id)
+  if not client:
+      return False
+  if not verify_password(client_secret, client['client_secret']):
+      return False
   return True
 
 def verify_client_info(client_id, redirect_url):
+  client = get_db_entry(clients_db, client_id)
+  if not client:
+      return False
+  if not any(redirect_url.startswith(ru) for ru in client['redirect_urls']):
+      return False
   return True
 
 def generate_code_challenge(code_verifier):
@@ -52,7 +96,6 @@ def generate_access_token():
   }
 
   access_token = JWT().encode(payload, private_key, alg = 'RS256')
-  print(access_token)
   #access_token = JWT().decode(access_token, public_key, do_time_check=False)
   #print(access_token)
 
@@ -91,14 +134,14 @@ def verify_authorization_code(authorization_code, client_id, redirect_url,
   code_challenge_in_record = record.get('code_challenge')
 
   if client_id != client_id_in_record or \
-     redirect_url != redirect_url_in_record:
+     not redirect_url_in_record.startswith(redirect_url):
     return False
 
   if exp < time.time():
     return False
 
   code_challenge = generate_code_challenge(code_verifier)
-  code_challenge = "abcd"
+
   if code_challenge != code_challenge_in_record:
     return False
 

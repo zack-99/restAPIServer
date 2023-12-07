@@ -3,7 +3,11 @@ import requests
 #import ssl
 
 from flask import (Flask, make_response, render_template, redirect, request,
-                   url_for)
+                   url_for, session)
+import base64
+import os
+import re
+import hashlib
 
 AUTH_PATH = 'http://localhost:5001/auth'
 TOKEN_PATH = 'http://localhost:5001/token'
@@ -11,17 +15,33 @@ RES_PATH = 'http://localhost:5002/users'
 REDIRECT_URL = 'http://localhost:5000/callback'
 
 CLIENT_ID = 'sample-client-id'
-CLIENT_SECRET = 'sample-client-secret'
+CLIENT_SECRET = 'secret'
 
-CODE_VERIFIER ="samp-code-verifier"
+# TODO: random generated
+CODE_VERIFIER = "samp-code-verifier"
+
+states = {}
 
 app = Flask(__name__)
+
+app.secret_key = 'SECRET-SESSION-KEY'
+
+def generate_code_challenge_pair() -> tuple:
+  state = base64.urlsafe_b64encode(os.urandom(10)).decode('utf-8').replace('=', '')
+
+  code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode('utf-8')
+  code_verifier = re.sub('[^a-zA-Z0-9]+', '', code_verifier)
+
+  m = hashlib.sha256()
+  m.update(code_verifier.encode())
+  code_challenge = m.digest()
+  return (code_verifier, base64.b64encode(code_challenge, b'-_').decode().replace('=', ''), state)
 
 @app.before_request
 def before_request():
   # Redirects user to the login page if access token is not present
   if request.endpoint not in ['login', 'callback']:
-    access_token = request.cookies.get('access_token')
+    access_token = session.get('access_token', None)
     if access_token:
       pass
     else:
@@ -30,7 +50,7 @@ def before_request():
 @app.route('/')
 def main():
   # Retrieves a list of users
-  access_token = request.cookies.get('access_token')
+  access_token = session['access_token']
 
   r = requests.get(RES_PATH, headers = {
     'Authorization': 'Bearer {}'.format(access_token)
@@ -48,20 +68,34 @@ def main():
 
 @app.route('/login')
 def login():
+  (code_verifier, code_challenge, state) = generate_code_challenge_pair()
+
+  states[state] = { 'code_verifier': code_verifier, 'code_challenge': code_challenge }
+
   # Presents the login page
   return render_template('AC_login.html', 
                          dest = AUTH_PATH,
                          client_id = CLIENT_ID,
-                         redirect_url = REDIRECT_URL)
+                         redirect_url = REDIRECT_URL,
+                         code_challenge = code_challenge,
+                         state = state)
 
 @app.route('/callback')
 def callback():
   # Accepts the authorization code and exchanges it for access token
   authorization_code = request.args.get('authorization_code')
+  state = request.args.get('state')
+
+  #authorization_code = base64.b64encode(authorization_code, b'-_').decode().replace('=', '')
 
   if not authorization_code:
     return json.dumps({
       'error': 'No authorization code is received.'
+    }), 500
+
+  if not state or not state in states:
+    return json.dumps({
+      'error': 'Invalid state received.'
     }), 500
 
   r = requests.post(TOKEN_PATH, data = {
@@ -69,9 +103,11 @@ def callback():
     "authorization_code": authorization_code,
     "client_id" : CLIENT_ID,
     "client_secret" : CLIENT_SECRET,
-    "code_verifier" : CODE_VERIFIER,
+    "code_verifier" : states[state]['code_verifier'],
     "redirect_url": REDIRECT_URL
   })
+
+  del states[state]
   
   if r.status_code != 200:
     return json.dumps({
@@ -81,9 +117,8 @@ def callback():
   
   
   access_token = json.loads(r.text).get('access_token')
-  print(access_token)
   response = make_response(redirect(url_for('main')))
-  response.set_cookie('access_token', access_token)
+  session['access_token'] = access_token
   return response
 
 

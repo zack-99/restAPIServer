@@ -11,16 +11,17 @@ from urllib.parse import urlencode
 
 app = Flask(__name__)
 
+# CLIENT auth, verifies partial of the client credentials: client_id, redirect_url, code_challenge
 @app.route('/auth')
 def auth():
   # Describe the access request of the client and ask user for approval
   client_id = request.args.get('client_id')
   redirect_url = request.args.get('redirect_url')
   code_challenge = request.args.get('code_challenge')
-  code_challenge = "abcd"
+
   if None in [ client_id, redirect_url, code_challenge ]:
     return json.dumps({
-      "error": "invalid_request"
+      "error": "invalid_request 1"
     }), 400
 
   if not verify_client_info(client_id, redirect_url):
@@ -42,6 +43,8 @@ def process_redirect_url(redirect_url, authorization_code):
   url = urlparse.urlunparse(url_parts)
   return url
 
+
+# USER sign in, verifies user's credentials and code_challenge
 @app.route('/signin', methods = ['POST'])
 def signin():
   # Issues authorization code
@@ -50,11 +53,10 @@ def signin():
   client_id = request.form.get('client_id')
   redirect_url = request.form.get('redirect_url')
   code_challenge = request.form.get('code_challenge')
-  code_challenge = "abcd"
 
   if None in [username, password, client_id, redirect_url, code_challenge]:
     return json.dumps({
-      "error": "invalid_request"
+      "error": "invalid_request 2"
     }), 400
 
   if not verify_client_info(client_id, redirect_url):
@@ -79,13 +81,19 @@ def exchange_for_token():
   # Issues access token
   authorization_code = request.form.get('authorization_code')
   client_id = request.form.get('client_id')
+  client_secret = request.form.get('client_secret')
   code_verifier = request.form.get('code_verifier')
   redirect_url = request.form.get('redirect_url')
-  code_verifier = "abcd"
+
   if None in [ authorization_code, client_id, code_verifier, redirect_url ]:
     return json.dumps({
-      "error": "invalid_request"
+      "error": "invalid_request 3"
     }), 400
+
+  if not authenticate_client(client_id, client_secret):
+    return json.dumps({
+      'error': 'access_denied'
+    }), 401
 
   if not verify_authorization_code(authorization_code, client_id, redirect_url,
                                    code_verifier):

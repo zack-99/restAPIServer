@@ -16,7 +16,7 @@ def before_request():
     }), 400
   
   access_token = auth_header[7:]
-  print(access_token)
+
   if access_token and verify_access_token(access_token):
       pass
   else:
