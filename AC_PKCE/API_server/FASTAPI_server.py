@@ -198,7 +198,7 @@ async def check_valid_token(req: Request) -> dict | None:
     
     token_auth = req.headers.get("authorization")
     if token_auth is None:
-        return None
+        #return None
         raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token invalid",
