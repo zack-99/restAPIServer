@@ -90,6 +90,7 @@ def generate_code_challenge(code_verifier):
   return base64.b64encode(code_challenge, b'-_').decode().replace('=', '')
 
 def generate_access_token():
+  print(time.time())
   payload = {
     "iss": ISSUER,
     "exp": time.time() + JWT_LIFE_SPAN

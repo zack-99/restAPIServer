@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Resource Owner Password Credentials Client (Web Application)</title>
+</head>
+
+<body>
+	<h2>Api disponibili</h2>
+
+	<h3>Prescrizioni:</h3>
+	<table>
+		<tr>
+			<td>Info su tutte le prescrizioni</td>
+			<form action="/result_api" method="get">
+				<td><input id="prescriptions" type="submit" name="end_point" value="prescriptions" />
+			</form></td>
+		</tr>
+		<tr>
+			<td>Info su una prescrizione specifica</td>
+			<form action="/result_api" method="get">
+			<td><input type="submit" name="end_point" value="prescription?id=1"/>
+			</form></td>
+		</tr>
+
+	</table>
+
+	<h3>Pazienti:</h3>
+	<table>
+		<tr>
+			<td>Info su tutti i pazienti</td>
+			<form action="/result_api" method="get">
+				<td><input id="prescriptions" type="submit" name="end_point" value="patients" />
+			</form></td>
+		</tr>
+		<tr>
+			<td>Info su un paziente specifico -> non implementata, ma funziona come per le prescrizioni</td>
+			<form action="/result_api" method="get">
+			<td><input disabled type="submit" name="end_point" value="patient?id=1"/>
+			</form></td>
+		</tr>
+	</table>
+
+	<h3>Dottori:</h3>
+	<table>
+		<tr>
+			<td>Info su tutti i dottori</td>
+			<form action="/result_api" method="get">
+				<td><input id="prescriptions" type="submit" name="end_point" value="doctors" />
+			</form></td>
+		</tr>
+		<tr>
+			<td>Info su un dottore specifico -> non implementata, ma funziona come per le prescrizioni</td>
+			<form action="/result_api" method="get">
+			<td><input disabled type="submit" name="end_point" value="doctor?id=1"/>
+			</form></td>
+		</tr>
+	</table>
+	<br>
+	<b>Ovviamente ci sono anche gli endpoint per inserire nuove prescrizioni ad un paziente, nuovi pazienti, ... (sono ancora da implementare, ma ci vuole un secondo)</b>
+	<br>
+	<b>Il mio dubbio su queste è che in realtà non saprei cosa far vedere come risultato della chiamata per l'esame</b>
+	<br>
+	<p>I dati restituiti qui sotto non sono generati automaticamente.</p>
+	<p>Per testare le api direttamente da swagger bisogna modificare nel FASTAPI_server il metodo check_valid_token: commentare il return None dopo "if token_auth is None"</p>
+	<h2>API result:</h2>
+	{{result}}
+	<!--<table style="width:100%">
+	  <tr>
+	    <th>Username</th>
+	    <th>Email</th> 
+	  </tr>
+	  {% for user in users %}
+	  <tr>
+	  	<td>{{ user['username'] }}</td>
+	  	<td>{{ user['email'] }}</td>
+	  </tr>
+	  {% endfor %}
+	</table>-->
+
+	<h2>Dubbi e cose da risolvere:</h2>
+	<ul>
+		<li>Aggiungere i permessi -> l'utente deve poter accedere a determinate API in base al suo ruolo (es. paziente può accedere solo alle sue, dottore a tutto, ecc.)
+			Quindi possiamo salvare i permessi dell'utente all'interno del token e memorizzarli anche sull'API_Server per fare i controlli sulle operazioni permesse
+		</li>
+		<li>Aggiungere anche l'username dell'utente all'interno del token</li>
+		<li>Come gestiamo l'uso delle API da Swagger? Dobbiamo creare dei nuovi end_point solo per swagger per ottenere un token, altrimenti non possiamo testarle direttamente da lì</li>
+	</ul>
+
+</body>
+
+</html>

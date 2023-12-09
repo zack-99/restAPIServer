@@ -102,6 +102,7 @@ def exchange_for_token():
     }), 400
 
   access_token = generate_access_token()
+  print(access_token)
   return json.dumps({ 
     "access_token": access_token,
     "token_type": "JWT",

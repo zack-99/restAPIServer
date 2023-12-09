@@ -11,7 +11,8 @@ import hashlib
 
 AUTH_PATH = 'http://localhost:5001/auth'
 TOKEN_PATH = 'http://localhost:5001/token'
-RES_PATH = 'http://localhost:5002/users'
+#RES_PATH = 'http://localhost:5002/users'
+RES_PATH = 'http://localhost:8000/'
 REDIRECT_URL = 'http://localhost:5000/callback'
 
 CLIENT_ID = 'sample-client-id'
@@ -52,7 +53,7 @@ def main():
   # Retrieves a list of users
   access_token = session['access_token']
 
-  r = requests.get(RES_PATH, headers = {
+  """r = requests.get(RES_PATH, headers = {
     'Authorization': 'Bearer {}'.format(access_token)
   })
 
@@ -62,9 +63,47 @@ def main():
         r.text)
     }), 500
 
-  users = json.loads(r.text).get('results')
+  print("TEST-TOKEN")
+  print(r.text)
+  #users = json.loads(r.text).get('results')
+  #print(users) """
 
-  return render_template('users.html', users = users)
+  return render_template('result_api.html')
+
+
+@app.get('/result_api')
+def print_result_api():
+  # Retrieves a list of users
+  access_token = session['access_token']
+
+  end_point = request.args.get('end_point')
+
+  id = request.args.get('id')
+  if id is not None:
+    end_point += "?id=" + id
+
+
+
+
+  print(RES_PATH + end_point)
+
+  r = requests.get(RES_PATH + end_point, headers = {
+    'Authorization': 'Bearer {}'.format(access_token)
+  })
+
+  if r.status_code != 200:
+    return json.dumps({
+      'error': 'The resource server returns an error: \n{}'.format(
+        r.text)
+    }), 500
+
+  print("TEST-TOKEN")
+  print(r.text)
+  #users = json.loads(r.text).get('results')
+  #print(users)
+
+  return render_template('result_api.html',result = r.text)
+
 
 @app.route('/login')
 def login():
