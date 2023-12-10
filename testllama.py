@@ -6,7 +6,7 @@ from langchain.prompts import PromptTemplate
 
 #MODEL_PATH = "./llama-2-7b-chat.ggmlv3.guf.q8_0.bin"
 #MODEL_PATH = "llama-2-7b.Q4_K_M.gguf"
-MODEL_PATH = "llama-2-7b-ggmlv3.guf.q4_0.bin"
+MODEL_PATH = "llama-model/llama-2-7b-ggmlv3.guf.q4_0.bin"
 # Callbacks support token-wise streaming
 callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
@@ -44,3 +44,6 @@ llm = LlamaCpp(
 #llm(prompt)
 
 result = llm("Describe person in JSON format:") #with name, surname, e-mail
+
+for x in range(0, 5):
+    result = llm("Describe person in JSON format:")
