@@ -16,6 +16,12 @@ from jwt import (
   exceptions,
   jwk_from_pem
 )
+from langchain.callbacks.manager import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.chains import LLMChain
+from langchain.llms import LlamaCpp
+from langchain.prompts import PromptTemplate
+
 
 # to get a string like this run:
 # openssl rand -hex 32
@@ -23,6 +29,28 @@ SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "RS256"#"HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+#MODEL
+MODEL_PATH = "llama-model/openorca-platypus2-13b.ggmlv3.gguf.q4_0.bin"
+callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
+template = """Question: {question}
+Answer: Let's work this out in a step by step way to be sure we have the right answer."""
+prompt = PromptTemplate(template=template, input_variables=["question"])
+# Make sure the model path is correct for your system!
+n_gpu_layers = 1  # Metal set to 1 is enough.
+n_batch = 512  # Should be between 1 and n_ctx, consider the amount of RAM of your Apple Silicon Chip.
+llm = LlamaCpp(
+    model_path=MODEL_PATH,
+    temperature=1,
+    #max_tokens=150,
+    #top_p=1,
+    n_gpu_layers=n_gpu_layers,
+    n_batch=n_batch,
+    f16_kv=True,
+    callback_manager=callback_manager,
+    verbose=True,  # Verbose is required to pass to the callback manager
+    grammar_path="llama-model/json.gbnf",
+)
+use_model = True #Set False to not use llm
 
 fake_users_db = {
     "johndoe": {
@@ -105,8 +133,6 @@ def get_user(db, username: str):
     if username in db:
         user_dict = db[username]
         return UserInDB(**user_dict)
-
-
 
 async def get_current_user_old(
         security_scopes: SecurityScopes, token: Annotated[str, Depends(oauth2_scheme)]
@@ -224,48 +250,62 @@ async def check_valid_token(req: Request) -> dict | None:
                 #headers={"WWW-Authenticate": authenticate_value},
             )
 
+def create_data(prompt:str, num:int):
+    res_list = []
+    for _ in range(num):
+        result = llm(prompt)
+        print("RES: " + result)
+        json_object = json.loads(result)
+        res_list.append(json_object)
+    return res_list
+
+
 @app.get("/patients/") #Ritorna tutti i pazienti disponibili (ne vengono creati 5 per semplicità)
 async def get_patients_info(payload = Depends(check_valid_token)):
     # Returns a list of users.
-    result = [
-        {
-            'nome': 'test_nome_1',
-            'cognome': 'test_cognome_1',
-            'codice_fiscale': 'test_codice_fiscale_1',
-            'ricoverato': 'si',
-            'fine_ricovero': '02/02/01',
-            'inizio_ricovero': '01/01/01',
-            'dottore': 'dottore_1',
-            'farmaci_da_assumere': [
-                {
-                    'nome' : 'farmaco_1_1',
-                    'descrizione':'descrizione_1_1'
 
-                },
-                {
-                    'nome' : 'farmaco_2_1',
-                    'descrizione':'descrizione_2_1'
+    if use_model:
+        result = create_data("Describe patient with name, tax id code, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",3)
+    else:
+        result = [
+            {
+                'nome': 'test_nome_1',
+                'cognome': 'test_cognome_1',
+                'codice_fiscale': 'test_codice_fiscale_1',
+                'ricoverato': 'si',
+                'fine_ricovero': '02/02/01',
+                'inizio_ricovero': '01/01/01',
+                'dottore': 'dottore_1',
+                'farmaci_da_assumere': [
+                    {
+                        'nome' : 'farmaco_1_1',
+                        'descrizione':'descrizione_1_1'
 
-                }
-            ],
-            'data': 'test_data_1',
-            'luogo': 'test_luogo_1',
-        },
-        {
-            'nome': 'test_nome_2',
-            'cognome': 'test_cognome_2',
-            'codice_fiscale': 'test_codice_fiscale_2',
-            'ricoverato': 'no',
-            'fine_ricovero': 'null',
-            'inizio_ricovero': 'null',
-            'dottore': 'dottore_2',
-            'farmaci_da_assumere': [
-                
-            ],
-            'data': 'test_data_2',
-            'luogo': 'test_luogo_2',
-        }
-    ]
+                    },
+                    {
+                        'nome' : 'farmaco_2_1',
+                        'descrizione':'descrizione_2_1'
+
+                    }
+                ],
+                'data': 'test_data_1',
+                'luogo': 'test_luogo_1',
+            },
+            {
+                'nome': 'test_nome_2',
+                'cognome': 'test_cognome_2',
+                'codice_fiscale': 'test_codice_fiscale_2',
+                'ricoverato': 'no',
+                'fine_ricovero': 'null',
+                'inizio_ricovero': 'null',
+                'dottore': 'dottore_2',
+                'farmaci_da_assumere': [
+                    
+                ],
+                'data': 'test_data_2',
+                'luogo': 'test_luogo_2',
+            }
+        ]
 
     return result
 
@@ -285,11 +325,16 @@ async def get_patient_info(id: int,payload = Depends(check_valid_token)):
         'results': payload
     })
 
+
+
 @app.get("/prescriptions/") #Restituisce le informazioni di tutte le prescrizioni
 async def get_prescriptions_info(payload = Depends(check_valid_token)):
     # Returns a list of users.
-    
-    result = [
+
+    if use_model:
+        result = create_data("Describe prescription with name of client, tax id code of client and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",3)
+    else:
+        result = [
         {
             'prescrizione_id': 1,
             'nome': 'test_nome_1',
@@ -330,7 +375,7 @@ async def get_prescriptions_info(payload = Depends(check_valid_token)):
             'data': 'test_data_2',
             'luogo': 'test_luogo_2',
         }
-    ]
+        ]
     return result
 
 @app.get("/prescription") #Restituisce le informazioni di una specifica prescrizione
@@ -378,41 +423,44 @@ async def add_new_prescription(payload = Depends(check_valid_token)):
 async def get_doctors_info(payload = Depends(check_valid_token)):
     # Returns a list of users.
 
-    result = [
-        {
-            'nome': 'test_nome_1',
-            'cognome': 'test_cognome_1',
-            'codice_fiscale': 'test_codice_fiscale_1',
-            'disponibile': 'si',
-            'in_ferie' : 'no',
-            'pazienti_seguiti':[
-                {
-                    'nome':'nome_1',
-                    'farmaci':[
-                        {
-                            'nome':'farmaco_1'
-                        }
-                    ],
-                },
-                {
-                    'nome':'nome_2',
-                    'farmaci':[
-                        {
-                            'nome':'farmaco_2'
-                        }
-                    ],
-                }
-            ]
-        },
-        {
-            'nome': 'test_nome_2',
-            'cognome': 'test_cognome_2',
-            'codice_fiscale': 'test_codice_fiscale_2',
-            'disponibile': 'no',
-            'in_ferie' : 'si',
-            'pazienti_seguiti':[]
-        }
-    ]
+    if use_model:
+        result = create_data("Describe doctor name and a list with one or two elements of patient with name, illness, the visit date (in format DD-MM-YYYY) in JSON format:",3)
+    else:
+        result = [
+            {
+                'nome': 'test_nome_1',
+                'cognome': 'test_cognome_1',
+                'codice_fiscale': 'test_codice_fiscale_1',
+                'disponibile': 'si',
+                'in_ferie' : 'no',
+                'pazienti_seguiti':[
+                    {
+                        'nome':'nome_1',
+                        'farmaci':[
+                            {
+                                'nome':'farmaco_1'
+                            }
+                        ],
+                    },
+                    {
+                        'nome':'nome_2',
+                        'farmaci':[
+                            {
+                                'nome':'farmaco_2'
+                            }
+                        ],
+                    }
+                ]
+            },
+            {
+                'nome': 'test_nome_2',
+                'cognome': 'test_cognome_2',
+                'codice_fiscale': 'test_codice_fiscale_2',
+                'disponibile': 'no',
+                'in_ferie' : 'si',
+                'pazienti_seguiti':[]
+            }
+        ]
     return result
     return json.dumps({
         'results': result
