@@ -3,10 +3,12 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chains import LLMChain
 from langchain.llms import LlamaCpp
 from langchain.prompts import PromptTemplate
+import json
 
-#MODEL_PATH = "./llama-2-7b-chat.ggmlv3.guf.q8_0.bin"
+#MODEL_PATH = "llama-model/llama-2-7b-chat.ggmlv3.guf.q8_0.bin"
 #MODEL_PATH = "llama-2-7b.Q4_K_M.gguf"
-MODEL_PATH = "llama-model/llama-2-7b-ggmlv3.guf.q4_0.bin"
+#MODEL_PATH = "llama-model/llama-2-7b-ggmlv3.guf.q4_0.bin"
+MODEL_PATH = "llama-model/openorca-platypus2-13b.ggmlv3.gguf.q4_0.bin"
 # Callbacks support token-wise streaming
 callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
@@ -21,8 +23,8 @@ n_gpu_layers = 1  # Metal set to 1 is enough.
 n_batch = 512  # Should be between 1 and n_ctx, consider the amount of RAM of your Apple Silicon Chip.
 llm = LlamaCpp(
     model_path=MODEL_PATH,
-    #temperature=0.75,
-    #max_tokens=2000,
+    temperature=1,
+    max_tokens=150,
     #top_p=1,
     n_gpu_layers=n_gpu_layers,
     n_batch=n_batch,
@@ -43,7 +45,17 @@ llm = LlamaCpp(
 
 #llm(prompt)
 
-result = llm("Describe person in JSON format:") #with name, surname, e-mail
+llm("Describe 5 different person in JSON format:")
 
-for x in range(0, 5):
-    result = llm("Describe person in JSON format:")
+num_people = 5
+
+people_list = []
+
+for _ in range(num_people):
+    result = llm("Describe person with name, surname and email in JSON format:")
+    print("RES: " + result)
+    json_object = json.loads(result)
+    people_list.append(json_object) #{"name": json_object['name'], "surname": json_object['surname'], "email:":json_object['email']})
+
+for i in range(len(people_list)):
+    print(f"{people_list[i]} \n")
