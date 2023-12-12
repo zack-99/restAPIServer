@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import json
+import requests
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Security, status, Form, Request
 from fastapi.security import (
@@ -28,6 +29,7 @@ from langchain.prompts import PromptTemplate
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "RS256"#"HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+TOKEN_PATH = "http://127.0.0.1:5001/user"
 
 #MODEL
 MODEL_PATH = "llama-model/openorca-platypus2-13b.ggmlv3.gguf.q4_0.bin"
@@ -52,22 +54,31 @@ llm = LlamaCpp(
 )
 use_model = True #Set False to not use llm
 
+"""
+patients?department=ciaica (info su tutti i pazienti di un reparto)
+patient?department=cica&username=1212121 (info su un paziente di un reparto)
+prescriptions?department=cicaciac
+prescription?department=cicaciac&username=23232323
+doctors?deparment=caiaicaic
+
+
+patient/me (info su di me)
+
+"""
+
+
 fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "disabled": False,
-        "scopes": ["me", "items"]
+    "user1": { #Primario
+        "authorized_api": ["/patients", "/prescriptions", "/doctors", "/doctors/department", "/patient", "/patient/me", "/prescription/me"],
+        "department": "Cardiologia",
     },
-    "alice": {
-        "username": "alice",
-        "full_name": "Alice Chains",
-        "email": "alicechains@example.com",
-        "hashed_password": "$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6",
-        "disabled": False,
-        "scopes": ["me"]
+    "user2": { #Infermire -> può aggiungere solo pazienti
+        "authorized_api": ["/doctors","/prescriptions","/patient/me","prescription/me"],
+        "department": "Urologia",
+    },
+    "user3": { #Paziente
+        "authorized_api": ["/patient/me", "/prescriptions/me","/doctors"],
+        "department": "Oncologia"
     },
 }
 
@@ -219,8 +230,8 @@ with open('public.pem', 'rb') as fh:
     public_key = jwk_from_pem(fh.read())
 
 
-#Return token payload if it's valid or HTTPException
-async def check_valid_token(req: Request) -> dict | None:
+#Return username if it's valid or HTTPException
+async def check_valid_token(req: Request) -> str | None:
     
     token_auth = req.headers.get("authorization")
     if token_auth is None:
@@ -243,7 +254,10 @@ async def check_valid_token(req: Request) -> dict | None:
                 #headers={"WWW-Authenticate": authenticate_value},
             )
         #print(payload)
-        return payload
+        username = requests.post(TOKEN_PATH, data = {
+        "access_token": token
+        })
+        return json.loads(username.text).get('username')
     raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token invalid",
@@ -254,18 +268,56 @@ def create_data(prompt:str, num:int):
     res_list = []
     for _ in range(num):
         result = llm(prompt)
-        print("RES: " + result)
         json_object = json.loads(result)
         res_list.append(json_object)
     return res_list
 
+def verify_authorization(api, username):
+    for user in fake_users_db:
+        if(user==username):
+            if api in fake_users_db[user]['authorized_api']:
+                return True
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not enough permissions",
+                #headers={"WWW-Authenticate": authenticate_value},
+            )
+    
+    raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not enough permissions",
+                #headers={"WWW-Authenticate": authenticate_value},
+            )
 
-@app.get("/patients/") #Ritorna tutti i pazienti disponibili (ne vengono creati 5 per semplicità)
-async def get_patients_info(payload = Depends(check_valid_token)):
+def verify_department(department, username):
+    for user in fake_users_db:
+        if(user==username):
+            if department in fake_users_db[user]['department']:
+                return True
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="You don't belong to this department",
+                #headers={"WWW-Authenticate": authenticate_value},
+            )
+    
+    raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="You don't belong to this department",
+                #headers={"WWW-Authenticate": authenticate_value},
+            )
+
+
+@app.post("/patients/") #Ritorna tutti i pazienti di un reparto
+async def get_patients_info(department:str, username = Depends(check_valid_token)):
     # Returns a list of users.
+    verify_authorization("/patients", username)
+    """
+    url prendo reparto -> verifico il reparto corretto -> creo dati finti/401
+    """
+    verify_department(department, username)
 
     if use_model:
-        result = create_data("Describe patient with name, tax id code, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",3)
+        result = create_data(f"Describe patient with name, tax id code, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), department equals to {department} , illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
     else:
         result = [
             {
@@ -313,26 +365,57 @@ async def get_patients_info(payload = Depends(check_valid_token)):
         'result' : result
     })
 
-@app.post("/patient/") #Crea un nuovo paziente con dati creati a caso
-async def get_patient_info(id: int,payload = Depends(check_valid_token)):
+@app.post("/patient") #ritorna un paziente di un reparto
+async def get_patient_info(department:str, patient:str, username = Depends(check_valid_token)):
     # Returns a list of users.
+
+    verify_authorization("/patient", username)
+    verify_department(department, username) #Non si controlla che l'utente esista e appartenga al reparto indicato
+
+    if use_model:
+        result = create_data(f"Describe patient with name equals to {patient}, tax id code, department equals to {department}, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",1)
+    else:
+        result = {
+            "a":1
+        }
+    
     users = [
         { 'username': 'L', 'email': 'janedoe@example.com'},
         { 'username': 'C', 'email': 'johndoe@example.com'}
     ]
 
-    return json.dumps({
-        'results': payload
-    })
+    return result
 
+@app.post("/patient/me/") #ritorna le mie informazioni
+async def get_patient_me_info(username = Depends(check_valid_token)):
 
-
-@app.get("/prescriptions/") #Restituisce le informazioni di tutte le prescrizioni
-async def get_prescriptions_info(payload = Depends(check_valid_token)):
-    # Returns a list of users.
+    verify_authorization("/patient/me", username)
+    """
+    url prendo reparto -> verifico il reparto corretto -> creo dati finti/401
+    """
 
     if use_model:
-        result = create_data("Describe prescription with name of client, tax id code of client and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",3)
+        result = create_data(f"Describe patient with name, tax id code, name of his doctor, department, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",1)
+    else:
+        result = {
+            "a":1
+        }
+    
+    users = [
+        { 'username': 'L', 'email': 'janedoe@example.com'},
+        { 'username': 'C', 'email': 'johndoe@example.com'}
+    ]
+
+    return result
+
+@app.post("/prescriptions") #Restituisce le informazioni di tutte le prescrizioni all'interno di un reparto
+async def get_prescriptions_of_department(department:str, username = Depends(check_valid_token)):
+
+    verify_authorization("/prescriptions", username)
+    verify_department(department, username) #Non si controlla che l'utente esista e appartenga al reparto indicato
+
+    if use_model:
+        result = create_data(f"Describe prescription with name of client, tax id code of client, department of the client equal to {department} and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
     else:
         result = [
         {
@@ -378,53 +461,76 @@ async def get_prescriptions_info(payload = Depends(check_valid_token)):
         ]
     return result
 
-@app.get("/prescription") #Restituisce le informazioni di una specifica prescrizione
-async def get_prescription_info(id: int, payload = Depends(check_valid_token)):
-    # Returns a list of users.
+@app.post("/prescription") #Restituisce le prescrizioni di un particolare utente
+async def get_patient_prescription_info(department:str, patient:str, username = Depends(check_valid_token)):
 
-    result = {
-        'prescrizione_id': id,
-        'nome': 'test_nome',
-        'cognome': 'test_cognome',
-        'codice_fiscale': 'test_codice_fiscale',
-        'farmaci': [
-            {
-                'nome' : 'farmaco_1',
-                'descrizione':'descrizione_1'
-
-            },
-            {
-                'nome' : 'farmaco_2',
-                'descrizione':'descrizione_2'
-
-            }
-        ],
-        'data': 'test_data',
-        'luogo': 'test_luogo',
-    }
-    return result
-    return json.dumps({
-        'results': result
-    })
-
-@app.post("/prescription") #Inserisce una nuova prescrizione
-async def add_new_prescription(payload = Depends(check_valid_token)):
-    # Returns a list of users.
-    users = [
-        { 'username': 'L', 'email': 'janedoe@example.com'},
-        { 'username': 'C', 'email': 'johndoe@example.com'}
-    ]
-
-    return json.dumps({
-        'results': payload
-    })
-
-@app.get("/doctors")
-async def get_doctors_info(payload = Depends(check_valid_token)):
-    # Returns a list of users.
+    verify_authorization("/prescriptions", username)
+    verify_department(department, username) #Non si controlla che l'utente esista e appartenga al reparto indicato
 
     if use_model:
-        result = create_data("Describe doctor name and a list with one or two elements of patient with name, illness, the visit date (in format DD-MM-YYYY) in JSON format:",3)
+        result = create_data(f"Describe prescription with name of client equals to {patient}, tax id code of client, department of the client equal to {department} and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
+    else:
+        result = {
+            'prescrizione_id': id,
+            'nome': 'test_nome',
+            'cognome': 'test_cognome',
+            'codice_fiscale': 'test_codice_fiscale',
+            'farmaci': [
+                {
+                    'nome' : 'farmaco_1',
+                    'descrizione':'descrizione_1'
+
+                },
+                {
+                    'nome' : 'farmaco_2',
+                    'descrizione':'descrizione_2'
+
+                }
+            ],
+            'data': 'test_data',
+            'luogo': 'test_luogo',
+        }
+    return result
+
+@app.post("/prescription/me") #Tutte le mie prescrizioni
+async def add_new_prescription(username = Depends(check_valid_token)):
+    # Returns a list of users.
+
+    verify_authorization("/prescription/me", username)
+    if use_model:
+        result = create_data(f"Describe prescription with name of client equals to {username}, tax id code of client, department of the client and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
+    else:
+        result = {
+            'prescrizione_id': id,
+            'nome': 'test_nome',
+            'cognome': 'test_cognome',
+            'codice_fiscale': 'test_codice_fiscale',
+            'farmaci': [
+                {
+                    'nome' : 'farmaco_1',
+                    'descrizione':'descrizione_1'
+
+                },
+                {
+                    'nome' : 'farmaco_2',
+                    'descrizione':'descrizione_2'
+
+                }
+            ],
+            'data': 'test_data',
+            'luogo': 'test_luogo',
+        }
+
+    return result
+
+@app.post("/doctors") #Tutti i dottori presenti
+async def get_doctors(username = Depends(check_valid_token)):
+    # Returns a list of users.
+
+    verify_authorization("/doctors", username)
+
+    if use_model:
+        result = create_data("Describe doctor with name, tax id code, his department, age, telephone number:",3)
     else:
         result = [
             {
@@ -466,7 +572,48 @@ async def get_doctors_info(payload = Depends(check_valid_token)):
         'results': result
     })
 
-#TODO:
-#Verifica del token
-#Dal token ottenere l'user (da fare quando verrà modificato il contenuto del token su auth_server)
-#Verifica degli scope -> metterli nel token e verificare quelli che ha l'utente, oppure farlo a priori in base al client_id dell'auth_server
+@app.post("/doctors/department") #Tutti i dottori di un reparto presenti
+async def get_doctors(department:str, username = Depends(check_valid_token)):
+    # Returns a list of users.
+
+    verify_authorization("/doctors", username)
+
+    if use_model:
+        result = create_data(f"Describe doctor with name, tax id code, department equals to {department}, age, telephone number:",3)
+    else:
+        result = [
+            {
+                'nome': 'test_nome_1',
+                'cognome': 'test_cognome_1',
+                'codice_fiscale': 'test_codice_fiscale_1',
+                'disponibile': 'si',
+                'in_ferie' : 'no',
+                'pazienti_seguiti':[
+                    {
+                        'nome':'nome_1',
+                        'farmaci':[
+                            {
+                                'nome':'farmaco_1'
+                            }
+                        ],
+                    },
+                    {
+                        'nome':'nome_2',
+                        'farmaci':[
+                            {
+                                'nome':'farmaco_2'
+                            }
+                        ],
+                    }
+                ]
+            },
+            {
+                'nome': 'test_nome_2',
+                'cognome': 'test_cognome_2',
+                'codice_fiscale': 'test_codice_fiscale_2',
+                'disponibile': 'no',
+                'in_ferie' : 'si',
+                'pazienti_seguiti':[]
+            }
+        ]
+    return result

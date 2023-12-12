@@ -13,13 +13,25 @@
 		<tr>
 			<td>Info su tutte le prescrizioni</td>
 			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="prescriptions" />
+				<td><input id="prescriptions" type="submit" name="end_point" value="prescriptions?department=Cardiologia" />
+			</form></td>
+			<form action="/result_api" method="get">
+				<td><input id="prescriptions" type="submit" name="end_point" value="prescriptions?department=error" />
 			</form></td>
 		</tr>
 		<tr>
-			<td>Info su una prescrizione specifica</td>
+			<td>Info su tutte le prescrizioni di un paziente specifico di un reparto</td>
 			<form action="/result_api" method="get">
-			<td><input type="submit" name="end_point" value="prescription?id=1"/>
+				<td><input id="prescriptions" type="submit" name="end_point" value="prescription?department=Cardiologia&patient=patient1" />
+			</form></td>
+			<form action="/result_api" method="get">
+				<td><input id="prescriptions" type="submit" name="end_point" value="prescription?department=error&patient=patient1" />
+			</form></td>
+		</tr>
+		<tr>
+			<td>Info su tutte le mie prescrizioni</td>
+			<form action="/result_api" method="get">
+				<td><input id="prescriptions" type="submit" name="end_point" value="prescription/me" />
 			</form></td>
 		</tr>
 
@@ -30,13 +42,25 @@
 		<tr>
 			<td>Info su tutti i pazienti</td>
 			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="patients" />
+				<td><input id="prescriptions" type="submit" name="end_point" value="patients?department=Cardiologia" />
+			</form></td>
+			<form action="/result_api" method="get">
+				<td><input id="prescriptions" type="submit" name="end_point" value="patients?department=error" />
 			</form></td>
 		</tr>
 		<tr>
-			<td>Info su un paziente specifico -> non implementata, ma funziona come per le prescrizioni</td>
+			<td>Info su di me</td>
 			<form action="/result_api" method="get">
-			<td><input disabled type="submit" name="end_point" value="patient?id=1"/>
+				<td><input id="prescriptions" type="submit" name="end_point" value="patient/me" />
+			</form></td>
+		</tr>
+		<tr>
+			<td>Info su un paziente specifico di un reparto specifico</td>
+			<form action="/result_api" method="get">
+			<td><input type="submit" name="end_point" value="patient?department=Cardiologia&patient=patient1"/>
+			</form></td>
+			<form action="/result_api" method="get">
+			<td><input type="submit" name="end_point" value="patient?department=error&patient=patient1"/>
 			</form></td>
 		</tr>
 	</table>
@@ -50,9 +74,9 @@
 			</form></td>
 		</tr>
 		<tr>
-			<td>Info su un dottore specifico -> non implementata, ma funziona come per le prescrizioni</td>
+			<td>Info su tutti i dottori di un reparto</td>
 			<form action="/result_api" method="get">
-			<td><input disabled type="submit" name="end_point" value="doctor?id=1"/>
+			<td><input type="submit" name="end_point" value="doctors/department?department=departmentname"/>
 			</form></td>
 		</tr>
 	</table>
@@ -80,10 +104,6 @@
 
 	<h2>Dubbi e cose da risolvere:</h2>
 	<ul>
-		<li>Aggiungere i permessi -> l'utente deve poter accedere a determinate API in base al suo ruolo (es. paziente può accedere solo alle sue, dottore a tutto, ecc.)
-			Quindi possiamo salvare i permessi dell'utente all'interno del token e memorizzarli anche sull'API_Server per fare i controlli sulle operazioni permesse
-		</li>
-		<li>Aggiungere anche l'username dell'utente all'interno del token</li>
 		<li>Come gestiamo l'uso delle API da Swagger? Dobbiamo creare dei nuovi end_point solo per swagger per ottenere un token, altrimenti non possiamo testarle direttamente da lì</li>
 	</ul>
 

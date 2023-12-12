@@ -1,10 +1,9 @@
 import json
 #import ssl
 import urllib.parse as urlparse
-
 from auth import (authenticate_user_credentials, authenticate_client,
                   generate_access_token, generate_authorization_code, 
-                  verify_authorization_code, verify_client_info,
+                  verify_authorization_code, verify_client_info, get_username_by_token,
                   JWT_LIFE_SPAN)
 from flask import Flask, redirect, render_template, request
 from urllib.parse import urlencode
@@ -70,7 +69,7 @@ def signin():
     }), 401
 
   authorization_code = generate_authorization_code(client_id, redirect_url,
-                                                   code_challenge)
+                                                   code_challenge,username)
 
   url = process_redirect_url(redirect_url, authorization_code)
   
@@ -101,12 +100,19 @@ def exchange_for_token():
       "error": "access_denied"
     }), 400
 
-  access_token = generate_access_token()
-  print(access_token)
+  access_token = generate_access_token(authorization_code)
   return json.dumps({ 
     "access_token": access_token,
     "token_type": "JWT",
     "expires_in": JWT_LIFE_SPAN
+  })
+
+@app.route('/user', methods=['POST'])
+def get_user_information_by_token():
+  access_token = request.form.get('access_token')
+  username = get_username_by_token(access_token)
+  return json.dumps({
+    "username": username
   })
 
 if __name__ == '__main__':

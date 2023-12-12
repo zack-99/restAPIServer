@@ -87,7 +87,7 @@ def print_result_api():
 
   print(RES_PATH + end_point)
 
-  r = requests.get(RES_PATH + end_point, headers = {
+  r = requests.post(RES_PATH + end_point, headers = {
     'Authorization': 'Bearer {}'.format(access_token)
   })
 
