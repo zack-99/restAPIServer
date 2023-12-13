@@ -1,7 +1,7 @@
 import json
 #import ssl
 import urllib.parse as urlparse
-from auth import (authenticate_user_credentials, authenticate_client,
+from auth import (authenticate_user_credentials, register_client, authenticate_client,
                   generate_access_token, generate_authorization_code, 
                   verify_authorization_code, verify_client_info, get_username_by_token,
                   JWT_LIFE_SPAN)
@@ -9,6 +9,18 @@ from flask import Flask, redirect, render_template, request
 from urllib.parse import urlencode
 
 app = Flask(__name__)
+
+@app.route('/register')
+def register():
+  return render_template('AC_PKCE_register_client.html')
+
+@app.route('/client-signup', methods = ['POST'])
+def client_signup():
+  urls = request.form.getlist('redirect_url[]')
+  (client_id, client_secret) = register_client(urls)
+  return render_template('AC_PKCE_register_client.html',
+                          client_id = client_id,
+                          client_secret = client_secret)
 
 # CLIENT auth, verifies partial of the client credentials: client_id, redirect_url, code_challenge
 @app.route('/auth')

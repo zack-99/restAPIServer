@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html class="h-100">
+<head>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <title>New client</title>
+  <script>
+    function delete_url(e) {
+      let data_index = e.target.getAttribute("data-index");
+
+      if(data_index == 0)
+        return;
+
+      document.querySelector(`.input-group[data-index='${data_index}']`).remove();
+    }
+
+    let data_index = 0;
+
+    function add_url(e) {
+      let clone = document.querySelector(".input-group[data-index='0']").cloneNode(true);
+
+      data_index++;
+
+      document.querySelector(".urls").appendChild(clone);
+
+      clone.setAttribute("data-index", data_index);
+      clone.querySelectorAll("[data-index='0']").forEach((e) => {
+        e.setAttribute("data-index", data_index);
+        e.disabled = false;
+      })
+    }
+  </script>
+</head>
+<body class="d-flex flex-column justify-content-center align-items-center h-100 row-gap-4">
+  <div class="card">
+    <h5 class="card-header">Client registration</h5>
+    <div class="card-body">
+      <form action="/client-signup" method="post">
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <label for="redirect_url" class="form-label">Redirect URLs</label>
+            <button type="button" class="input-group-text btn btn-success" onclick="add_url(event)" data-index="0">+</button>
+          </div>
+          <div class="urls">
+            <div class="input-group mb-2" data-index="0">
+              <input type="text" class="form-control" name="redirect_url[]" data-index="0">
+              <button type="button" class="input-group-text btn btn-danger" disabled onclick="delete_url(event)" data-index="0">x</button>
+            </div>
+          </div>
+        </div>
+        <input class="btn btn-primary" type="submit" value="Register">
+      </form>
+    </div>
+  </div>
+  <div class="card">
+    <h5 class="card-header">Result</h5>
+    <div class="card-body">
+      <p><b>Client ID:</b> <pre>{{client_id}}</pre></p>
+      <p><b>Client Secret:</b> <pre>{{client_secret}}</pre></p>
+    </div>
+  </div>
+</body>
+</html>

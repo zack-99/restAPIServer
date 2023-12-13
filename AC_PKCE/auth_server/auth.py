@@ -2,6 +2,7 @@ import base64
 import cryptography
 import hashlib
 import json
+import os
 from jwt import (
     JWT,
     jwk_from_pem
@@ -95,6 +96,18 @@ def authenticate_user_credentials(username: str, password: str):
       return False
   return True
 
+def register_client(redirect_urls):
+  client_id = base64.urlsafe_b64encode(os.urandom(10)).decode('utf-8').replace('=', '')
+  client_secret = base64.urlsafe_b64encode(os.urandom(30)).decode('utf-8').replace('=', '')
+
+  clients_db[client_id] = {
+    'client_secret': pwd_context.hash(client_secret),
+    'redirect_urls': redirect_urls
+  }
+
+  print(clients_db)
+
+  return (client_id, client_secret)
 
 def authenticate_client(client_id, client_secret):
   client = get_db_entry(clients_db, client_id)
