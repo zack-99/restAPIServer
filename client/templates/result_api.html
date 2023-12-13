@@ -1,85 +1,144 @@
 <!DOCTYPE html>
-<html>
+<html class="min-vh-100">
 
 <head>
-	<title>Resource Owner Password Credentials Client (Web Application)</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+	<title>API</title>
 </head>
 
-<body>
-	<h2>Api disponibili</h2>
+<body class="d-flex justify-content-center align-content-center min-vh-100 flex-wrap column-gap-5 row-gap-5">
+	<h2 class="w-100 text-center my-3">API disponibili</h2>
 
-	<h3>Prescrizioni:</h3>
-	<table>
-		<tr>
-			<td>Info su tutte le prescrizioni</td>
-			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="prescriptions?department=Cardiologia" />
-			</form></td>
-			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="prescriptions?department=error" />
-			</form></td>
-		</tr>
-		<tr>
-			<td>Info su tutte le prescrizioni di un paziente specifico di un reparto</td>
-			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="prescription?department=Cardiologia&patient=patient1" />
-			</form></td>
-			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="prescription?department=error&patient=patient1" />
-			</form></td>
-		</tr>
-		<tr>
-			<td>Info su tutte le mie prescrizioni</td>
-			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="prescription/me" />
-			</form></td>
-		</tr>
+	<div class="card">
+		<h5 class="card-header">Prescrizioni</h5>
+		<div class="card-body">
+			<table>
+				<tr>
+					<td>Info su tutte le prescrizioni di un reparto</td>
+				</tr>
+				<tr>
+					<td class="d-flex column-gap-3 pb-4">
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="prescriptions?department=Cardiologia" />
+							<input class="btn btn-primary" type="submit" value="Cardiologia" />
+						</form>
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="prescriptions?department=error" />
+							<input class="btn btn-primary" type="submit" value="Error" />
+						</form>
+					</td>
+				</tr>
+				<tr>
+					<td>Info su tutte le prescrizioni di un paziente specifico di un reparto</td>
+				</tr>
+				<tr>
+					<td class="d-flex column-gap-3 pb-4">
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="prescription?department=Cardiologia&patient=patient1" />
+							<input class="btn btn-primary" type="submit" value="Cardiologia, Patient1" />
+						</form>
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="prescription?department=error&patient=patient1" />
+							<input class="btn btn-primary" type="submit" value="Error, Patient1" />
+						</form>
+					</td>
+				</tr>
+				<tr>
+					<td>Info su tutte le mie prescrizioni</td>
+				</tr>
+				<tr>
+					<td class="d-flex column-gap-3">
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="prescription/me" />
+							<input class="btn btn-primary" type="submit" value="Me" />
+						</form>
+					</td>
+				</tr>
 
-	</table>
+			</table>
+		</div>
+	</div>
 
-	<h3>Pazienti:</h3>
-	<table>
-		<tr>
-			<td>Info su tutti i pazienti</td>
-			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="patients?department=Cardiologia" />
-			</form></td>
-			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="patients?department=error" />
-			</form></td>
-		</tr>
-		<tr>
-			<td>Info su di me</td>
-			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="patient/me" />
-			</form></td>
-		</tr>
-		<tr>
-			<td>Info su un paziente specifico di un reparto specifico</td>
-			<form action="/result_api" method="get">
-			<td><input type="submit" name="end_point" value="patient?department=Cardiologia&patient=patient1"/>
-			</form></td>
-			<form action="/result_api" method="get">
-			<td><input type="submit" name="end_point" value="patient?department=error&patient=patient1"/>
-			</form></td>
-		</tr>
-	</table>
+	<div class="card">
+		<h5 class="card-header">Pazienti</h5>
+		<div class="card-body">
+			<table>
+				<tr>
+					<td>Info su tutti i pazienti di un reparto</td>
+				</tr>
+				<tr>
+					<td class="d-flex column-gap-3 pb-4">
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="patients?department=Cardiologia" />
+							<input class="btn btn-primary" type="submit" value="Cardiologia" />
+						</form>
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="patients?department=error" />
+							<input class="btn btn-primary" type="submit" value="Error" />
+						</form>
+					</td>
+				</tr>
+				<tr>
+					<td>Info su un paziente specifico di un reparto specifico</td>
+				</tr>
+				<tr>
+					<td class="d-flex column-gap-3 pb-4">
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="patient?department=Cardiologia&patient=patient1"/>
+							<input class="btn btn-primary" type="submit" value="Cardiologia, Patient1" />
+						</form>
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="patient?department=error&patient=patient1"/>
+							<input class="btn btn-primary" type="submit" value="Error, Patient1" />
+						</form>
+					</td>
+				</tr>
+				<tr>
+					<td>Info su di me</td>
+				</tr>
+				<tr>
+					<td class="d-flex column-gap-3">
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="patient/me" />
+							<input class="btn btn-primary" type="submit" value="Me" />
+						</form>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
 
-	<h3>Dottori:</h3>
-	<table>
-		<tr>
-			<td>Info su tutti i dottori</td>
-			<form action="/result_api" method="get">
-				<td><input id="prescriptions" type="submit" name="end_point" value="doctors" />
-			</form></td>
-		</tr>
-		<tr>
-			<td>Info su tutti i dottori di un reparto</td>
-			<form action="/result_api" method="get">
-			<td><input type="submit" name="end_point" value="doctors/department?department=departmentname"/>
-			</form></td>
-		</tr>
-	</table>
+	<div class="card">
+		<h5 class="card-header">Dottori</h5>
+		<div class="card-body">
+			<table>
+				<tr>
+					<td>Info su tutti i dottori</td>
+				</tr>
+				<tr>
+					<td class="d-flex column-gap-3 pb-4">
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="doctors" />
+							<input class="btn btn-primary" type="submit" value="All" />
+						</form>
+					</td>
+				</tr>
+				<tr>
+					<td>Info su tutti i dottori di un reparto</td>
+				</tr>
+				<tr>
+					<td class="d-flex column-gap-3">
+						<form action="/result_api" method="get">
+							<input type="hidden" name="end_point" value="doctors/department?department=departmentname"/>
+							<input class="btn btn-primary" type="submit" value="Departmentname" />
+						</form>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<!--
 	<br>
 	<b>Ovviamente ci sono anche gli endpoint per inserire nuove prescrizioni ad un paziente, nuovi pazienti, ... (sono ancora da implementare, ma ci vuole un secondo)</b>
 	<br>
@@ -101,12 +160,12 @@
 	  </tr>
 	  {% endfor %}
 	</table>-->
-
+<!--
 	<h2>Dubbi e cose da risolvere:</h2>
 	<ul>
 		<li>Come gestiamo l'uso delle API da Swagger? Dobbiamo creare dei nuovi end_point solo per swagger per ottenere un token, altrimenti non possiamo testarle direttamente da lì</li>
 	</ul>
-
+-->
 </body>
 
 </html>
