@@ -32,6 +32,28 @@
 		}*/
 	</script>
 	<style>
+		html {
+			overflow: hidden;
+		}
+
+		body {
+			background-color: #A7E7F6;
+		}
+
+		html:after {
+			content: "CLIENT";
+			font-family: var(--bs-body-font-family);
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			z-index: -1;
+			pointer-events: none;
+			font-weight: bolder;
+			font-size: 3500%;
+			color: rgba(0,0,0,.05);
+		}
+
 		#loading svg {
 			animation-name: loading;
   			animation-duration: 2s;
