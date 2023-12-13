@@ -48,6 +48,11 @@ def before_request():
     else:
       return redirect(url_for('login'))
 
+@app.route('/logout')
+def logout():
+  session['access_token'] = None
+  return redirect(url_for('main'))
+
 @app.route('/')
 def main():
   # Retrieves a list of users
