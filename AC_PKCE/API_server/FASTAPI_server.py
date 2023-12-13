@@ -77,7 +77,7 @@ fake_users_db = {
         "department": "Urologia",
     },
     "user3": { #Paziente
-        "authorized_api": ["/patient/me", "/prescriptions/me","/doctors"],
+        "authorized_api": ["/patient/me", "/prescription/me","/doctors"],
         "department": "Oncologia"
     },
 }
@@ -273,6 +273,7 @@ def create_data(prompt:str, num:int):
     return res_list
 
 def verify_authorization(api, username):
+    print(f"api {api}, username {username}")
     for user in fake_users_db:
         if(user==username):
             if api in fake_users_db[user]['authorized_api']:

@@ -41,11 +41,11 @@ read_self, read_all, read_group, read_under (mio gruppo + quelli sotto)
 
 users_db = {
     #password: secret
-    "user1": {'username': 'user1', 'password': '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW'},
+    "user1": {'username': 'user1', 'password': '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW','access_token':''},
     #password: ciao
-    "user2": {'username': 'user2', 'password': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6'},
+    "user2": {'username': 'user2', 'password': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6','access_token':''},
     #password: ciao
-    "user3": {'username': 'user3', 'password': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6'}
+    "user3": {'username': 'user3', 'password': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6','access_token':''}
 }
 
 clients_db = {
@@ -185,12 +185,13 @@ def verify_authorization_code(authorization_code, client_id, redirect_url,
 
 
 def generate_access_token(authorization_code):
-  print(time.time())
-  print(authorization_codes)
+  #print(time.time())
+  #print(authorization_codes)
   record = authorization_codes.get(authorization_code)
-  print(record)
+  username = record['username']
+  #print(record)
   """for code in authorization_codes:
-    print(code)
+    print(f"code {code}")
     if code == authorization_code:
       username = authorization_code['username']
   """
@@ -204,8 +205,8 @@ def generate_access_token(authorization_code):
   #print(access_token)
   #print(f"record: {record}")
   #print(users_db[username])
-  users_db[record['username']]['access_token'] = access_token
-  
+  users_db[username]['access_token'] = access_token
+
   del authorization_codes[authorization_code]
 
   return access_token
