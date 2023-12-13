@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import json
 import requests
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, Security, status, Form, Request
+from fastapi import Depends, FastAPI, HTTPException, Security, status, Form, Request, Query
 from fastapi.security import (
     OAuth2PasswordBearer,
     OAuth2PasswordRequestForm,
@@ -54,17 +54,6 @@ llm = LlamaCpp(
 )
 use_model = True #Set False to not use llm
 
-"""
-patients?department=ciaica (info su tutti i pazienti di un reparto)
-patient?department=cica&username=1212121 (info su un paziente di un reparto)
-prescriptions?department=cicaciac
-prescription?department=cicaciac&username=23232323
-doctors?deparment=caiaicaic
-
-
-patient/me (info su di me)
-
-"""
 
 
 fake_users_db = {
@@ -72,7 +61,7 @@ fake_users_db = {
         "authorized_api": ["/patients", "/prescriptions", "/doctors", "/doctors/department", "/patient", "/patient/me", "/prescription/me"],
         "department": "Cardiologia",
     },
-    "user2": { #Infermire -> può aggiungere solo pazienti
+    "user2": { #Infermire
         "authorized_api": ["/doctors","/prescriptions","/patient/me","prescription/me"],
         "department": "Urologia",
     },
@@ -82,41 +71,9 @@ fake_users_db = {
     },
 }
 
-class OAuth2AuthorizationCodeRequestForm(BaseModel):
-    client_id: str
-    scopes: list[str] = []
+#pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class LoginRequestForm(BaseModel):
-    username: str
-    password: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    username: str | None = None
-    scopes: list[str] = []
-
-
-class AuthorizationCode(BaseModel):
-    authorization_code: str
-
-class User(BaseModel):
-    username: str
-    email: str | None = None
-    full_name: str | None = None
-    disabled: bool | None = None
-    scopes: list[str]
-
-
-class UserInDB(User):
-    hashed_password: str
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+"""
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
     scopes={"me": "Read information about the current user.", "items": "Read items."},
@@ -126,111 +83,31 @@ oauth2_scheme = OAuth2AuthorizationCodeBearer(
     authorizationUrl="authorization",
     tokenUrl="token",
     scopes={"me": "Read information about the current user.", "items": "Read items."},
-)
+)"""
 
 
-app = FastAPI()
+tags_metadata = [
+    {
+        "name": "Doctor",
+        "description": "Operations allowed to doctors",
+    },
+    {
+        "name":"Nurse",
+        "description": "Operations allowed to nurses",
+    },
+    {
+        "name": "Patient",
+        "description": "Operations allowed to patients",
+    },
+]
 
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict)
-
-async def get_current_user_old(
-        security_scopes: SecurityScopes, token: Annotated[str, Depends(oauth2_scheme)]
-): #Rimuovere
-    if security_scopes.scopes:
-        authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
-    else:
-        authenticate_value = "Bearer"
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": authenticate_value},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_scopes = payload.get("scopes", [])
-        token_data = TokenData(scopes=token_scopes, username=username)
-    except (JWTError, ValidationError):
-        raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
-    if user is None:
-        raise credentials_exception
-    for scope in security_scopes.scopes:
-        if scope not in token_data.scopes:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Not enough permissions",
-                headers={"WWW-Authenticate": authenticate_value},
-            )
-    return user
-
-
-@app.get("/login")  #Rimuovere
-async def login_for_authentication(
-        form_data: Annotated[LoginRequestForm, Depends()]
-):
-    print("")
-
-
-@app.get("/authorization", response_model=AuthorizationCode) #Rimuovere
-async def login_for_authorization_code(
-        form_data: Annotated[OAuth2AuthorizationCodeRequestForm, Depends()]
-):
-    print(form_data)
-    return {"authorization_code": "vsanvkm"}
-
-async def get_current_user(
-        security_scopes: SecurityScopes, token: Annotated[str, Depends(oauth2_scheme)]
-): #Rimuovere in futuro, ma per ora lasciare
-    if security_scopes.scopes:
-        authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
-    else:
-        authenticate_value = "Bearer"
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": authenticate_value},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_scopes = payload.get("scopes", [])
-        token_data = TokenData(scopes=token_scopes, username=username)
-    except (JWTError, ValidationError):
-        raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
-    if user is None:
-        raise credentials_exception
-    for scope in security_scopes.scopes:
-        if scope not in token_data.scopes:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Not enough permissions",
-                headers={"WWW-Authenticate": authenticate_value},
-            )
-    return user
+app = FastAPI(title="Hospital fake server",openapi_tags=tags_metadata)
 
 with open('public.pem', 'rb') as fh:
     public_key = jwk_from_pem(fh.read())
 
 
-#Return username if it's valid or HTTPException
+#Return username if token is valid or HTTPException
 async def check_valid_token(req: Request) -> str | None:
     
     token_auth = req.headers.get("authorization")
@@ -308,13 +185,11 @@ def verify_department(department, username):
             )
 
 
-@app.post("/patients/") #Ritorna tutti i pazienti di un reparto
+
+@app.post("/patients/",summary="Get info about all patients of one department", tags=["Doctor"])
 async def get_patients_info(department:str, username = Depends(check_valid_token)):
-    # Returns a list of users.
+    
     verify_authorization("/patients", username)
-    """
-    url prendo reparto -> verifico il reparto corretto -> creo dati finti/401
-    """
     verify_department(department, username)
 
     if use_model:
@@ -362,16 +237,11 @@ async def get_patients_info(department:str, username = Depends(check_valid_token
 
     return result
 
-    return json.dumps({
-        'result' : result
-    })
-
-@app.post("/patient") #ritorna un paziente di un reparto
+@app.post("/patient", summary="Get info about a patient of one department",tags=["Doctor"])
 async def get_patient_info(department:str, patient:str, username = Depends(check_valid_token)):
-    # Returns a list of users.
 
     verify_authorization("/patient", username)
-    verify_department(department, username) #Non si controlla che l'utente esista e appartenga al reparto indicato
+    verify_department(department, username)
 
     if use_model:
         result = create_data(f"Describe patient with name equals to {patient}, tax id code, department equals to {department}, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",1)
@@ -379,21 +249,13 @@ async def get_patient_info(department:str, patient:str, username = Depends(check
         result = {
             "a":1
         }
-    
-    users = [
-        { 'username': 'L', 'email': 'janedoe@example.com'},
-        { 'username': 'C', 'email': 'johndoe@example.com'}
-    ]
 
     return result
 
-@app.post("/patient/me/") #ritorna le mie informazioni
+@app.post("/patient/me/", summary="Get my info as a patient",tags=["Doctor","Nurse","Patient"])
 async def get_patient_me_info(username = Depends(check_valid_token)):
 
     verify_authorization("/patient/me", username)
-    """
-    url prendo reparto -> verifico il reparto corretto -> creo dati finti/401
-    """
 
     if use_model:
         result = create_data(f"Describe patient with name, tax id code, name of his doctor, department, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",1)
@@ -401,19 +263,14 @@ async def get_patient_me_info(username = Depends(check_valid_token)):
         result = {
             "a":1
         }
-    
-    users = [
-        { 'username': 'L', 'email': 'janedoe@example.com'},
-        { 'username': 'C', 'email': 'johndoe@example.com'}
-    ]
 
     return result
 
-@app.post("/prescriptions") #Restituisce le informazioni di tutte le prescrizioni all'interno di un reparto
+@app.post("/prescriptions", summary="Get all prescriptions of one department",tags=["Doctor","Nurse"]) 
 async def get_prescriptions_of_department(department:str, username = Depends(check_valid_token)):
 
     verify_authorization("/prescriptions", username)
-    verify_department(department, username) #Non si controlla che l'utente esista e appartenga al reparto indicato
+    verify_department(department, username)
 
     if use_model:
         result = create_data(f"Describe prescription with name of client, tax id code of client, department of the client equal to {department} and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
@@ -462,11 +319,11 @@ async def get_prescriptions_of_department(department:str, username = Depends(che
         ]
     return result
 
-@app.post("/prescription") #Restituisce le prescrizioni di un particolare utente
+@app.post("/prescription", summary="Get all prescriptions of one patient",tags=["Doctor","Nurse"]) 
 async def get_patient_prescription_info(department:str, patient:str, username = Depends(check_valid_token)):
 
     verify_authorization("/prescriptions", username)
-    verify_department(department, username) #Non si controlla che l'utente esista e appartenga al reparto indicato
+    verify_department(department, username) 
 
     if use_model:
         result = create_data(f"Describe prescription with name of client equals to {patient}, tax id code of client, department of the client equal to {department} and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
@@ -493,9 +350,8 @@ async def get_patient_prescription_info(department:str, patient:str, username = 
         }
     return result
 
-@app.post("/prescription/me") #Tutte le mie prescrizioni
+@app.post("/prescription/me", summary="Get all personal prescriptions",tags=["Doctor","Nurse","Patient"]) 
 async def add_new_prescription(username = Depends(check_valid_token)):
-    # Returns a list of users.
 
     verify_authorization("/prescription/me", username)
     if use_model:
@@ -524,9 +380,8 @@ async def add_new_prescription(username = Depends(check_valid_token)):
 
     return result
 
-@app.post("/doctors") #Tutti i dottori presenti
+@app.post("/doctors", summary="Get all doctors",tags=["Doctor","Nurse","Patient"])
 async def get_doctors(username = Depends(check_valid_token)):
-    # Returns a list of users.
 
     verify_authorization("/doctors", username)
 
@@ -569,13 +424,9 @@ async def get_doctors(username = Depends(check_valid_token)):
             }
         ]
     return result
-    return json.dumps({
-        'results': result
-    })
 
-@app.post("/doctors/department") #Tutti i dottori di un reparto presenti
+@app.post("/doctors/department", summary="Get all doctors of one department",tags=["Doctor","Nurse","Patient"])
 async def get_doctors(department:str, username = Depends(check_valid_token)):
-    # Returns a list of users.
 
     verify_authorization("/doctors", username)
 

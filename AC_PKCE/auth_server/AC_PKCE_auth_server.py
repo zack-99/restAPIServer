@@ -35,23 +35,25 @@ def client_signup():
                           client_secret = client_secret)
 
 # CLIENT auth, verifies partial of the client credentials: client_id, redirect_url, code_challenge
+
 @app.route('/auth')
 def auth():
   # Describe the access request of the client and ask user for approval
   client_id = request.args.get('client_id')
   redirect_url = request.args.get('redirect_url')
   code_challenge = request.args.get('code_challenge')
-
+  #Controllo che siano stati inviati tutti i dati dal client
   if None in [ client_id, redirect_url, code_challenge ]:
     return json.dumps({
-      "error": "invalid_request_1"
+      "error": "invalid_request"
     }), 400
-
+  
+  #Controllo i dati del client siano corretti
   if not verify_client_info(client_id, redirect_url):
     return json.dumps({
-      "error": "invalid_client_1"
+      "error": "invalid_client"
     })
-
+  #Tutto ok -> mostro la pagina di login
   return render_template('AC_PKCE_grant_access.html',
                          client_id = client_id,
                          redirect_url = redirect_url,
@@ -68,30 +70,34 @@ def process_redirect_url(redirect_url, authorization_code):
 
 
 # USER sign in, verifies user's credentials and code_challenge
+
 @app.route('/signin', methods = ['POST'])
 def signin():
-  # Issues authorization code
   username = request.form.get('username')
   password = request.form.get('password')
   client_id = request.form.get('client_id')
   redirect_url = request.form.get('redirect_url')
   code_challenge = request.form.get('code_challenge')
 
+  #Controllo che siano stati inviati tutti i dati
   if None in [username, password, client_id, redirect_url, code_challenge]:
     return json.dumps({
-      "error": "invalid_request_2"
+      "error": "invalid_request"
     }), 400
 
+  #Controllo che i dati del client siano corretti
   if not verify_client_info(client_id, redirect_url):
     return json.dumps({
-      "error": "invalid_client_2"
+      "error": "invalid_client"
     })
 
+  #Verifico se username password dell'utente che ha fatto il login siano giursti
   if not authenticate_user_credentials(username, password):
     return json.dumps({
       'error': 'access_denied'
     }), 401
 
+  #Creazione authorization code
   authorization_code = generate_authorization_code(client_id, redirect_url,
                                                    code_challenge,username)
 
@@ -110,7 +116,7 @@ def exchange_for_token():
 
   if None in [ authorization_code, client_id, code_verifier, redirect_url ]:
     return json.dumps({
-      "error": "invalid_request 3"
+      "error": "invalid_request"
     }), 400
 
   if not authenticate_client(client_id, client_secret):
