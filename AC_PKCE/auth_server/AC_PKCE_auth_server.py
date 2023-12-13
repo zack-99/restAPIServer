@@ -1,12 +1,11 @@
 import json
 #import ssl
-import urllib.parse as urlparse
 from auth import (authenticate_user_credentials, register_client, authenticate_client,
                   generate_access_token, generate_authorization_code, 
                   verify_authorization_code, verify_client_info, get_username_by_token,
                   JWT_LIFE_SPAN)
 from flask import Flask, redirect, render_template, request
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qsl
 
 app = Flask(__name__)
 
@@ -60,11 +59,11 @@ def auth():
 
 def process_redirect_url(redirect_url, authorization_code):
   # Prepare the redirect URL
-  url_parts = list(urlparse.urlparse(redirect_url))
-  queries = dict(urlparse.parse_qsl(url_parts[4]))
+  url_parts = list(urlparse(redirect_url))
+  queries = dict(parse_qsl(url_parts[4]))
   queries.update({ "authorization_code": authorization_code })
   url_parts[4] = urlencode(queries)
-  url = urlparse.urlunparse(url_parts)
+  url = urlunparse(url_parts)
   return url
 
 
