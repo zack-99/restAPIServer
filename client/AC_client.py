@@ -97,10 +97,11 @@ def print_result_api():
   })
 
   if r.status_code != 200:
-    return json.dumps({
+    return render_template('result_api.html',result = 'The resource server returns an error: \n{}'.format(r.text))
+    """return json.dumps({
       'error': 'The resource server returns an error: \n{}'.format(
         r.text)
-    }), 500
+    }), 500"""
 
   print("TEST-TOKEN")
   print(r.text)
