@@ -8,7 +8,8 @@ import json
 #MODEL_PATH = "llama-model/llama-2-7b-chat.ggmlv3.guf.q8_0.bin"
 #MODEL_PATH = "llama-2-7b.Q4_K_M.gguf"
 #MODEL_PATH = "llama-model/llama-2-7b-ggmlv3.guf.q4_0.bin"
-MODEL_PATH = "AC_PKCE/API_server/openorca-platypus2-13b.ggmlv3.gguf.q4_0.bin"
+#MODEL_PATH = "AC_PKCE/API_server/openorca-platypus2-13b.ggmlv3.gguf.q4_0.bin"
+MODEL_PATH = "C:/Users/zacen/Downloads/openorca-platypus2-13b.gguf.q4_0.bin"
 # Callbacks support token-wise streaming
 callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
