@@ -9,11 +9,13 @@ import os
 import re
 import hashlib
 
+REGISTER_CLIENT_URL = 'http://localhost:5001/register'
 AUTH_PATH = 'http://localhost:5001/auth'
 TOKEN_PATH = 'http://localhost:5001/token'
 #RES_PATH = 'http://localhost:5002/users'
 RES_PATH = 'http://localhost:8000/'
 REDIRECT_URL = 'http://localhost:5000/callback'
+CLIENT_CREDENTIALS_URL = 'http://localhost:5000/client-credentials'
 
 CLIENT_ID = 'sample-client-id'
 CLIENT_SECRET = 'secret'
@@ -41,7 +43,7 @@ def generate_code_challenge_pair() -> tuple:
 @app.before_request
 def before_request():
   # Redirects user to the login page if access token is not present
-  if request.endpoint not in ['login', 'callback']:
+  if request.endpoint not in ['login', 'callback', 'client_credentials', 'save_client_credentials']:
     access_token = session.get('access_token', None)
     if access_token:
       pass
@@ -51,6 +53,22 @@ def before_request():
 @app.route('/logout')
 def logout():
   session['access_token'] = None
+  return redirect(url_for('main'))
+
+@app.route('/client-credentials')
+def client_credentials():
+  return render_template('AC_client_credentials.html')
+
+@app.route('/save-client-credentials', methods = ['POST'])
+def save_client_credentials():
+  global CLIENT_ID, CLIENT_SECRET
+
+  CLIENT_ID = request.form.get('client_id')
+  CLIENT_SECRET = request.form.get('client_secret')
+
+  print(CLIENT_ID)
+  print(CLIENT_SECRET)
+
   return redirect(url_for('main'))
 
 @app.route('/')
@@ -123,7 +141,9 @@ def login():
                          client_id = CLIENT_ID,
                          redirect_url = REDIRECT_URL,
                          code_challenge = code_challenge,
-                         state = state)
+                         state = state,
+                         client_register_url = REGISTER_CLIENT_URL,
+                         client_credentials_url = CLIENT_CREDENTIALS_URL)
 
 @app.route('/callback')
 def callback():

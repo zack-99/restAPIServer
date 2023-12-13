@@ -32,12 +32,12 @@ def auth():
 
   if None in [ client_id, redirect_url, code_challenge ]:
     return json.dumps({
-      "error": "invalid_request 1"
+      "error": "invalid_request_1"
     }), 400
 
   if not verify_client_info(client_id, redirect_url):
     return json.dumps({
-      "error": "invalid_client"
+      "error": "invalid_client_1"
     })
 
   return render_template('AC_PKCE_grant_access.html',
@@ -67,12 +67,12 @@ def signin():
 
   if None in [username, password, client_id, redirect_url, code_challenge]:
     return json.dumps({
-      "error": "invalid_request 2"
+      "error": "invalid_request_2"
     }), 400
 
   if not verify_client_info(client_id, redirect_url):
     return json.dumps({
-      "error": "invalid_client"
+      "error": "invalid_client_2"
     })
 
   if not authenticate_user_credentials(username, password):

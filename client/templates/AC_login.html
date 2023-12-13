@@ -6,10 +6,17 @@
   <title>Sign in</title>
 </head>
 <body class="d-flex justify-content-center align-items-center h-100">
+
+  <div style="position: absolute; right: 30px; top: 30px;">
+    <a href="{{client_register_url}}" class="btn btn-secondary">Register client</a>
+    <a href="{{client_credentials_url}}" class="btn btn-secondary">Change client credentials</a>
+  </div>
+
   <div class="card">
     <h5 class="card-header">Login With OAuth</h5>
     <div class="card-body">
       <p class="card-text">Click here to login with with OAuth Authorization Server</p>
+      <p class="card-text"><b>Client ID: </b>{{client_id}}</p>
       <a class="btn btn-primary" href="{{dest}}?response_type=code&client_id={{client_id}}&code_challenge={{code_challenge}}&redirect_url={{redirect_url}}?state={{state}}">
         Sign in
       </a>
