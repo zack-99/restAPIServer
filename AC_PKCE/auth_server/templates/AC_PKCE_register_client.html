@@ -55,8 +55,12 @@
   <div class="card">
     <h5 class="card-header">Result</h5>
     <div class="card-body">
-      <p><b>Client ID:</b> <pre>{{client_id}}</pre></p>
-      <p><b>Client Secret:</b> <pre>{{client_secret}}</pre></p>
+      {% if error is defined %}
+        <p><b>Error: </b>{{error}}</p>
+      {% else %}
+        <p><b>Client ID:</b> <pre>{{client_id}}</pre></p>
+        <p><b>Client Secret:</b> <pre>{{client_secret}}</pre></p>
+      {% endif %}
     </div>
   </div>
 </body>

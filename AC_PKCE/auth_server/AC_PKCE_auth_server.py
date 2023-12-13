@@ -6,9 +6,16 @@ from auth import (authenticate_user_credentials, register_client, authenticate_c
                   verify_authorization_code, verify_client_info, get_username_by_token,
                   JWT_LIFE_SPAN)
 from flask import Flask, redirect, render_template, request
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 app = Flask(__name__)
+
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
 
 @app.route('/register')
 def register():
@@ -17,7 +24,13 @@ def register():
 @app.route('/client-signup', methods = ['POST'])
 def client_signup():
   urls = request.form.getlist('redirect_url[]')
+
+  for url in urls:
+    if not is_valid_url(url):
+      return render_template('AC_PKCE_register_client.html', error = 'Invalid URLs')
+  
   (client_id, client_secret) = register_client(urls)
+
   return render_template('AC_PKCE_register_client.html',
                           client_id = client_id,
                           client_secret = client_secret)
