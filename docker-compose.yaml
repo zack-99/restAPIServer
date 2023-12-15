@@ -5,19 +5,43 @@ services:
     container_name: apiclient
     ports:
       - 5000:5000
-    env_file:
-      - .env
+    environment:
+      - TOKEN_PATH=http://authserver:5001/token
+      - AUTH_PATH=http://authserver:5001/auth
+      - RES_PATH=http://apiserver:8000/
+      - REGISTER_CLIENT_URL=http://authserver:5001/register
+      - REDIRECT_URL=http://apiclient:5000/callback
+      - CLIENT_CREDENTIALS_URL=http://apiclient:5000/client-credentials
+      - VERIFY_TOKEN_PATH=http://authserver:5001/user
+    #env_file:
+    #  - .env
   authserver:
     image: authserverimage
     container_name: authserver
     ports:
       - 5001:5001
-    env_file:
-      - .env
+    environment:
+      - TOKEN_PATH=http://authserver:5001/token
+      - AUTH_PATH=http://authserver:5001/auth
+      - RES_PATH=http://apiserver:8000/
+      - REGISTER_CLIENT_URL=http://authserver:5001/register
+      - REDIRECT_URL=http://apiclient:5000/callback
+      - CLIENT_CREDENTIALS_URL=http://apiclient:5000/client-credentials
+      - VERIFY_TOKEN_PATH=http://authserver:5001/user
+    #env_file:
+    #  - .env
   apiserver:
     image: apiserverimage
     container_name: apiserver
     ports:
       - 8000:8000
-    env_file:
-      - .env
+    environment:
+      - TOKEN_PATH=http://authserver:5001/token
+      - AUTH_PATH=http://authserver:5001/auth
+      - RES_PATH=http://apiserver:8000/
+      - REGISTER_CLIENT_URL=http://authserver:5001/register
+      - REDIRECT_URL=http://apiclient:5000/callback
+      - CLIENT_CREDENTIALS_URL=http://apiclient:5000/client-credentials
+      - VERIFY_TOKEN_PATH=http://authserver:5001/user
+    #env_file:
+    #  - .env
