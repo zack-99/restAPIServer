@@ -2,6 +2,6 @@ FROM python:3.11.7-alpine
 WORKDIR /app
 
 COPY . /app
-EXPOSE 5002
+EXPOSE 5000
 RUN pip install -r requirements.txt
-CMD ["python", "AC_client.py"]
+CMD ["python", "client.py"]
