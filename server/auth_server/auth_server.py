@@ -38,10 +38,11 @@ def client_signup():
 
 @app.route('/auth')
 def auth():
-  # Describe the access request of the client and ask user for approval
+  # Parametri della richiesta di accesso del client
   client_id = request.args.get('client_id')
   redirect_url = request.args.get('redirect_url')
   code_challenge = request.args.get('code_challenge')
+
   #Controllo che siano stati inviati tutti i dati dal client
   if None in [ client_id, redirect_url, code_challenge ]:
     return json.dumps({
@@ -53,6 +54,7 @@ def auth():
     return json.dumps({
       "error": "invalid_client"
     })
+
   #Tutto ok -> mostro la pagina di login
   return render_template('AC_PKCE_grant_access.html',
                          client_id = client_id,
@@ -73,31 +75,32 @@ def process_redirect_url(redirect_url, authorization_code):
 
 @app.route('/signin', methods = ['POST'])
 def signin():
+  # Parametri richiesta
   username = request.form.get('username')
   password = request.form.get('password')
   client_id = request.form.get('client_id')
   redirect_url = request.form.get('redirect_url')
   code_challenge = request.form.get('code_challenge')
 
-  #Controllo che siano stati inviati tutti i dati
+  # Controllo che siano stati inviati tutti i dati
   if None in [username, password, client_id, redirect_url, code_challenge]:
     return json.dumps({
       "error": "invalid_request"
     }), 400
 
-  #Controllo che i dati del client siano corretti
+  # Controllo che il redirect url dato sia valido
   if not verify_client_info(client_id, redirect_url):
     return json.dumps({
       "error": "invalid_client"
     })
 
-  #Verifico se username password dell'utente che ha fatto il login siano giursti
+  # Verifico se username e password dell'utente che ha fatto il login siano giusti
   if not authenticate_user_credentials(username, password):
     return json.dumps({
       'error': 'access_denied'
     }), 401
 
-  #Creazione authorization code
+  # Creazione authorization code
   authorization_code = generate_authorization_code(client_id, redirect_url,
                                                    code_challenge,username)
 
@@ -107,30 +110,35 @@ def signin():
 
 @app.route('/token', methods = ['POST'])
 def exchange_for_token():
-  # Issues access token
+  # Parametri richiesta
   authorization_code = request.form.get('authorization_code')
   client_id = request.form.get('client_id')
   client_secret = request.form.get('client_secret')
   code_verifier = request.form.get('code_verifier')
   redirect_url = request.form.get('redirect_url')
 
+  # Verifica che tutti i parametri siano settati
   if None in [ authorization_code, client_id, code_verifier, redirect_url ]:
     return json.dumps({
       "error": "invalid_request"
     }), 400
 
+  # Autentica il client con client_id e client_secret
   if not authenticate_client(client_id, client_secret):
     return json.dumps({
       'error': 'access_denied'
     }), 401
 
+  # Verifica authorization code
   if not verify_authorization_code(authorization_code, client_id, redirect_url,
                                    code_verifier):
     return json.dumps({
       "error": "access_denied"
     }), 400
 
+  # Genera access token
   access_token = generate_access_token(authorization_code)
+  
   return json.dumps({ 
     "access_token": access_token,
     "token_type": "JWT",
@@ -149,4 +157,4 @@ if __name__ == '__main__':
   #context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
   #context.load_cert_chain('domain.crt', 'domain.key')
   #app.run(port = 5000, debug = True, ssl_context = context)
-  app.run(host='0.0.0.0', port = 5001, debug = True)
+  app.run(host = '0.0.0.0', port = 5001, debug = True)

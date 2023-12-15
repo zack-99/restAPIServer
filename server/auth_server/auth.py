@@ -135,17 +135,19 @@ def generate_code_challenge(code_verifier):
 
 
 def generate_authorization_code(client_id, redirect_url, code_challenge, username):
-  #f = Fernet(KEY)
+  # Costruzione e cifratura dell'authorization code
   authorization_code = f.encrypt(json.dumps({
       "client_id": client_id,
       "redirect_url": redirect_url,
   }).encode())
 
+  # Encoding dell'authorization code in base 64 e rimozione padding
   authorization_code = base64.b64encode(
       authorization_code, b'-_').decode().replace('=', '')
 
   expiration_date = time.time() + CODE_LIFE_SPAN
 
+  # Memoizzazione locale dell'authorization code
   authorization_codes[authorization_code] = {
       "client_id": client_id,
       "redirect_url": redirect_url,
@@ -185,26 +187,17 @@ def verify_authorization_code(authorization_code, client_id, redirect_url,
 
 
 def generate_access_token(authorization_code):
-  #print(time.time())
-  #print(authorization_codes)
+
   record = authorization_codes.get(authorization_code)
   username = record['username']
-  #print(record)
-  """for code in authorization_codes:
-    print(f"code {code}")
-    if code == authorization_code:
-      username = authorization_code['username']
-  """
+
   payload = {
       "iss": ISSUER,
       "exp": time.time() + JWT_LIFE_SPAN,
   }
 
   access_token = JWT().encode(payload, private_key, alg='RS256')
-  #access_token = JWT().decode(access_token, public_key, do_time_check=False)
-  #print(access_token)
-  #print(f"record: {record}")
-  #print(users_db[username])
+
   users_db[username]['access_token'] = access_token
 
   del authorization_codes[authorization_code]

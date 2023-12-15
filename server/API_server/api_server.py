@@ -54,7 +54,7 @@ llm = LlamaCpp(
     verbose=True,  # Verbose is required to pass to the callback manager
     grammar_path="./llama-model/json.gbnf",
 )
-use_model = True #Set False to not use llm
+use_model = False #Set False to not use llm
 
 
 
@@ -72,20 +72,6 @@ fake_users_db = {
         "department": "Oncologia"
     },
 }
-
-#pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-"""
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="token",
-    scopes={"me": "Read information about the current user.", "items": "Read items."},
-)
-
-oauth2_scheme = OAuth2AuthorizationCodeBearer(
-    authorizationUrl="authorization",
-    tokenUrl="token",
-    scopes={"me": "Read information about the current user.", "items": "Read items."},
-)"""
 
 
 tags_metadata = [
