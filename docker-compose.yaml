@@ -1,0 +1,23 @@
+version: '3'
+services:
+  client:
+    image: apiclientimage
+    container_name: apiclient
+    ports:
+      - 5000:5000
+    env_file:
+      - .env
+  authserver:
+    image: authserverimage
+    container_name: authserver
+    ports:
+      - 5001:5001
+    env_file:
+      - .env
+  apiserver:
+    image: apiserverimage
+    container_name: apiserver
+    ports:
+      - 8000:8000
+    env_file:
+      - .env

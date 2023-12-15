@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import json
 import requests
+import os
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Security, status, Form, Request, Query
 from fastapi.security import (
@@ -29,10 +30,11 @@ from langchain.prompts import PromptTemplate
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "RS256"#"HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-TOKEN_PATH = "http://127.0.0.1:5001/user"
+VERIFY_TOKEN_PATH = "http://127.0.0.1:5001/user" 
+#TOKEN_PATH = "http://127.0.0.1:5001/user"
 
 #MODEL
-MODEL_PATH = "llama-model/openorca-platypus2-13b.ggmlv3.gguf.q4_0.bin"
+MODEL_PATH = "./llama-model/openorca-platypus2-13b.gguf.q4_0.bin"
 callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 template = """Question: {question}
 Answer: Let's work this out in a step by step way to be sure we have the right answer."""
@@ -50,7 +52,7 @@ llm = LlamaCpp(
     f16_kv=True,
     callback_manager=callback_manager,
     verbose=True,  # Verbose is required to pass to the callback manager
-    grammar_path="llama-model/json.gbnf",
+    grammar_path="./llama-model/json.gbnf",
 )
 use_model = True #Set False to not use llm
 
@@ -131,7 +133,7 @@ async def check_valid_token(req: Request) -> str | None:
                 #headers={"WWW-Authenticate": authenticate_value},
             )
         #print(payload)
-        username = requests.post(TOKEN_PATH, data = {
+        username = requests.post(os.getenv("VERIFY_TOKEN_PATH",default=VERIFY_TOKEN_PATH), data = {
         "access_token": token
         })
         return json.loads(username.text).get('username')

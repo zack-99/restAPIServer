@@ -9,10 +9,16 @@ import os
 import re
 import hashlib
 
+#os.environ["TOKEN_PATH"] = 'http://localhost:5001/token'
+#os.environ["AUTH_PATH"] = 'http://localhost:5001/auth'
+#os.environ["RES_PATH"] = 'http://localhost:8000/'
+#os.environ["REGISTER_CLIENT_URL"]  = 'http://localhost:5001/register'
+#os.environ["REDIRECT_URL"] = 'http://localhost:5000/callback'
+#os.environ["CLIENT_CREDENTIALS_URL"] = 'http://localhost:5000/client-credentials'
 REGISTER_CLIENT_URL = 'http://localhost:5001/register'
 AUTH_PATH = 'http://localhost:5001/auth'
 TOKEN_PATH = 'http://localhost:5001/token'
-#RES_PATH = 'http://localhost:5002/users'
+RES_PATH = 'http://localhost:5002/users'
 RES_PATH = 'http://localhost:8000/'
 REDIRECT_URL = 'http://localhost:5000/callback'
 CLIENT_CREDENTIALS_URL = 'http://localhost:5000/client-credentials'
@@ -108,9 +114,9 @@ def print_result_api():
 
 
 
-  print(RES_PATH + end_point)
+  print(os.getenv("RES_PATH", default=RES_PATH) + end_point)
 
-  r = requests.post(RES_PATH + end_point, headers = {
+  r = requests.post(os.getenv("RES_PATH", default=RES_PATH) + end_point, headers = {
     'Authorization': 'Bearer {}'.format(access_token)
   })
 
@@ -137,13 +143,13 @@ def login():
 
   # Presents the login page
   return render_template('AC_login.html', 
-                         dest = AUTH_PATH,
+                         dest = os.getenv("AUTH_PATH",default=AUTH_PATH),
                          client_id = CLIENT_ID,
-                         redirect_url = REDIRECT_URL,
+                         redirect_url = os.getenv("REDIRECT_URL",default=REDIRECT_URL),
                          code_challenge = code_challenge,
                          state = state,
-                         client_register_url = REGISTER_CLIENT_URL,
-                         client_credentials_url = CLIENT_CREDENTIALS_URL)
+                         client_register_url = os.getenv("REGISTER_CLIENT_URL",default=REGISTER_CLIENT_URL),
+                         client_credentials_url = os.getenv("CLIENT_CREDENTIALS_URL",default=CLIENT_CREDENTIALS_URL))
 
 @app.route('/callback')
 def callback():
@@ -163,13 +169,13 @@ def callback():
       'error': 'Invalid state received.'
     }), 500
 
-  r = requests.post(TOKEN_PATH, data = {
+  r = requests.post(os.getenv("TOKEN_PATH",default=TOKEN_PATH), data = {
     "grant_type": "authorization_code",
     "authorization_code": authorization_code,
     "client_id" : CLIENT_ID,
     "client_secret" : CLIENT_SECRET,
     "code_verifier" : states[state]['code_verifier'],
-    "redirect_url": REDIRECT_URL
+    "redirect_url": os.getenv("REDIRECT_URL",default=REDIRECT_URL)
   })
 
   del states[state]

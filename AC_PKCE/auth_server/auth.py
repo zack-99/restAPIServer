@@ -28,7 +28,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 #with open('private.pem', 'rb') as file:
 #  private_key = file.read()
-with open('../API_server/public.pem', 'rb') as fh:
+with open('public.pem', 'rb') as fh:
     public_key = jwk_from_pem(fh.read())
 
 with open('private.pem', 'rb') as fh:
