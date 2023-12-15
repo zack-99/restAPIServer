@@ -18,12 +18,6 @@ from jwt import (
   exceptions,
   jwk_from_pem
 )
-from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.chains import LLMChain
-from langchain.llms import LlamaCpp
-from langchain.prompts import PromptTemplate
-
 
 # to get a string like this run:
 # openssl rand -hex 32
@@ -33,30 +27,34 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 VERIFY_TOKEN_PATH = "http://127.0.0.1:5001/user" 
 #TOKEN_PATH = "http://127.0.0.1:5001/user"
 
-#MODEL
-MODEL_PATH = "./llama-model/openorca-platypus2-13b.gguf.q4_0.bin"
-callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
-template = """Question: {question}
-Answer: Let's work this out in a step by step way to be sure we have the right answer."""
-prompt = PromptTemplate(template=template, input_variables=["question"])
-# Make sure the model path is correct for your system!
-n_gpu_layers = 1  # Metal set to 1 is enough.
-n_batch = 512  # Should be between 1 and n_ctx, consider the amount of RAM of your Apple Silicon Chip.
-llm = LlamaCpp(
-    model_path=MODEL_PATH,
-    temperature=1,
-    #max_tokens=150,
-    #top_p=1,
-    n_gpu_layers=n_gpu_layers,
-    n_batch=n_batch,
-    f16_kv=True,
-    callback_manager=callback_manager,
-    verbose=True,  # Verbose is required to pass to the callback manager
-    grammar_path="./llama-model/json.gbnf",
-)
-use_model = False #Set False to not use llm
+class Drug(BaseModel):
+    name:str | None = "Drug name"
+    dose:str | None = "Drug dose"
+    frequency:str | None = "Drug frequency"
+    duration:str | None = "Drug duration"
 
+class Patient(BaseModel):
+    name: str | None = "Patient name"
+    doctor_name: str | None = "Patient doctor_name"
+    tax_id_code: str | None = "Patient tax_id_code"
+    date_start_recovery: str | None = "Patient date_start_recovery"
+    date_end_recovery: str | None = "Patient date_end_recovery"
+    department: str | None = "Patient department"
+    illness: str | None = "Patient illness"
+    drugs: list[Drug] | None = []
 
+class Prescription(BaseModel):
+    client_name: str | None = "Prescription client_name"
+    client_tax_id_code: str | None = "Prescription client_tax_id_code"
+    department: str | None = "Prescription department"
+    drugs: list[Drug] | None = []
+
+class Doctor(BaseModel):
+    name: str | None = "Doctor name"
+    tax_id_code: str | None = "Doctor tax_id_code"
+    department: str | None = "Doctor department"
+    age: str | None = "Doctor age"
+    telephone_number: str | None = "Doctor telephone_number"
 
 fake_users_db = {
     "user1": { #Primario
@@ -72,7 +70,6 @@ fake_users_db = {
         "department": "Oncologia"
     },
 }
-
 
 tags_metadata = [
     {
@@ -129,14 +126,6 @@ async def check_valid_token(req: Request) -> str | None:
                 #headers={"WWW-Authenticate": authenticate_value},
             )
 
-def create_data(prompt:str, num:int):
-    res_list = []
-    for _ in range(num):
-        result = llm(prompt)
-        json_object = json.loads(result)
-        res_list.append(json_object)
-    return res_list
-
 def verify_authorization(api, username):
     print(f"api {api}, username {username}")
     for user in fake_users_db:
@@ -144,13 +133,13 @@ def verify_authorization(api, username):
             if api in fake_users_db[user]['authorized_api']:
                 return True
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=403,
                 detail="Not enough permissions",
                 #headers={"WWW-Authenticate": authenticate_value},
             )
     
     raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=403,
                 detail="Not enough permissions",
                 #headers={"WWW-Authenticate": authenticate_value},
             )
@@ -161,299 +150,551 @@ def verify_department(department, username):
             if department in fake_users_db[user]['department']:
                 return True
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=403,
                 detail="You don't belong to this department",
                 #headers={"WWW-Authenticate": authenticate_value},
             )
     
     raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=403,
                 detail="You don't belong to this department",
                 #headers={"WWW-Authenticate": authenticate_value},
             )
 
-
-
-@app.post("/patients/",summary="Get info about all patients of one department", tags=["Doctor"])
+@app.post("/patients/",summary="Get info about all patients of one department", tags=["Doctor"], response_model=list[Patient],responses={
+            403: {"description": "You don't belong to this department or you don't have enough permissions"}, 401: {"description": "Token invalid or expired"}
+         })
 async def get_patients_info(department:str, username = Depends(check_valid_token)):
     
+
+
     verify_authorization("/patients", username)
     verify_department(department, username)
+    #res = list[Patient]
+    res = []
 
-    if use_model:
-        result = create_data(f"Describe patient with name, tax id code, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), department equals to {department} , illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
-    else:
-        result = [
-            {
-                'nome': 'test_nome_1',
-                'cognome': 'test_cognome_1',
-                'codice_fiscale': 'test_codice_fiscale_1',
-                'ricoverato': 'si',
-                'fine_ricovero': '02/02/01',
-                'inizio_ricovero': '01/01/01',
-                'dottore': 'dottore_1',
-                'farmaci_da_assumere': [
-                    {
-                        'nome' : 'farmaco_1_1',
-                        'descrizione':'descrizione_1_1'
+    if username=="user1": #Solo user1 può usare questo endpoint
+        #Patient 1
+        patient = Patient()
+        patient.name = "John Smith"
+        patient.doctor_name = "Dr. Jane Smith"
+        patient.department = department
+        patient.date_start_recovery = "01-02-2020"
+        patient.date_end_recovery = "01-06-2020"
+        patient.illness = "Coronary artery disease"
+        patient.tax_id_code = "123-456-789"
+        drug1 = Drug()
+        drug1.name = "Metoprolol"
+        drug1.dose = "50 mg"
+        drug1.duration = "2 weeks"
+        drug1.frequency = "1 time/day"
+        drug2 = Drug()
+        drug2.name = "Aspirin"
+        drug2.dose = "325 mg"
+        drug2.duration = "3 weeks"
+        drug2.frequency = "1 time/day"
+        drugs = []
+        drugs.append(drug1)
+        drugs.append(drug2)
+        patient.drugs = drugs
+        res.append(patient)
+        #Patient 2
+        patient = Patient()
+        patient.name = "Alex Sanchez"
+        patient.department = department
+        patient.doctor_name = username
+        patient.date_start_recovery = "14-07-2022"
+        patient.date_end_recovery = "01-09-2022"
+        patient.illness = "Heart Attack"
+        patient.tax_id_code = "99887654"
+        drug1 = Drug()
+        drug1.name = "Acetylcysteine"
+        drug1.dose = "240 mg"
+        drug1.duration = "35 days"
+        drug1.frequency = "2 time/day"
+        drugs = []
+        drugs.append(drug1)
+        patient.drugs = drugs
+        res.append(patient)
 
-                    },
-                    {
-                        'nome' : 'farmaco_2_1',
-                        'descrizione':'descrizione_2_1'
+    return res
 
-                    }
-                ],
-                'data': 'test_data_1',
-                'luogo': 'test_luogo_1',
-            },
-            {
-                'nome': 'test_nome_2',
-                'cognome': 'test_cognome_2',
-                'codice_fiscale': 'test_codice_fiscale_2',
-                'ricoverato': 'no',
-                'fine_ricovero': 'null',
-                'inizio_ricovero': 'null',
-                'dottore': 'dottore_2',
-                'farmaci_da_assumere': [
-                    
-                ],
-                'data': 'test_data_2',
-                'luogo': 'test_luogo_2',
-            }
-        ]
-
-    return result
-
-@app.post("/patient", summary="Get info about a patient of one department",tags=["Doctor"])
+@app.post("/patient", summary="Get info about a patient of one department",tags=["Doctor"],response_model=Patient, responses={
+            403: {"description": "You don't belong to this department or you don't have enough permissions"}, 401: {"description": "Token invalid or expired"}})
 async def get_patient_info(department:str, patient:str, username = Depends(check_valid_token)):
 
     verify_authorization("/patient", username)
     verify_department(department, username)
+    p = Patient()
 
-    if use_model:
-        result = create_data(f"Describe patient with name equals to {patient}, tax id code, department equals to {department}, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",1)
-    else:
-        result = {
-            "a":1
-        }
+    if username=="user1": #Solo user1 può usare questo endpoint
+        #Patient 1
+        p.name = patient
+        p.department = department
+        p.doctor_name = "Dr. Doe"
+        p.date_start_recovery = "20-07-2021"
+        p.date_end_recovery = "22-08-2021"
+        p.illness = "Cardiomyopathy"
+        p.tax_id_code = "125-756-489"
+        drug1 = Drug()
+        drug1.name = "Lisinopril"
+        drug1.dose = "5"
+        drug1.duration = "30 days"
+        drug1.frequency = "2 times/day"
+        drug2 = Drug()
+        drug2.name = "Atenolol"
+        drug2.dose = "25 mg"
+        drug2.duration = "60 days"
+        drug2.frequency = "1 time/day"
+        drugs = []
+        drugs.append(drug1)
+        drugs.append(drug2)
+        p.drugs = drugs
 
-    return result
+    return p
 
-@app.post("/patient/me/", summary="Get my info as a patient",tags=["Doctor","Nurse","Patient"])
+@app.post("/patient/me/", summary="Get my info as a patient",tags=["Doctor","Nurse","Patient"], response_model=Patient, responses={
+            403: {"description": "You don't have enough permissions"}, 401: {"description": "Token invalid or expired"}})
 async def get_patient_me_info(username = Depends(check_valid_token)):
 
     verify_authorization("/patient/me", username)
+    department = ""
+    for user in fake_users_db:
+        if(user==username):
+            department = fake_users_db[user]['department']
+    patient = Patient()
 
-    if use_model:
-        result = create_data(f"Describe patient with name, tax id code, name of his doctor, department, data of start recovery (in format DD-MM-YYYY), data of end recovery (in format DD-MM-YYYY), illness, and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",1)
+    if username == "user1":
+        patient.name = username
+        patient.doctor_name = "Dr. Rose"
+        patient.department = department
+        patient.date_start_recovery = "20-07-2021"
+        patient.date_end_recovery = "22-08-2021"
+        patient.illness = "Cardiomyopathy"
+        patient.tax_id_code = "125-756-489"
+        drug1 = Drug()
+        drug1.name = "Lisinopril"
+        drug1.dose = "5"
+        drug1.duration = "30 days"
+        drug1.frequency = "2 times/day"
+        drug2 = Drug()
+        drug2.name = "Atenolol"
+        drug2.dose = "25 mg"
+        drug2.duration = "60 days"
+        drug2.frequency = "1 time/day"
+        drugs = []
+        drugs.append(drug1)
+        drugs.append(drug2)
+        patient.drugs = drugs
+    elif username == "user2":
+        patient.name = username
+        patient.doctor_name = "Dr. Dahmer"
+        patient.department = department
+        patient.date_start_recovery = "22-05-2022"
+        patient.date_end_recovery = "28-06-2022"
+        patient.illness = "Cardiomyopathy"
+        patient.tax_id_code = "Gastroenteritis"
+        drug1 = Drug()
+        drug1.name = "Ondansetron"
+        drug1.dose = "5 mg"
+        drug1.duration = "6 days"
+        drug1.frequency = "3 times/day"
+        drug2 = Drug()
+        drug2.name = "Loperamide"
+        drug2.dose = "1 capsule every 8 hours"
+        drug2.duration = "6 weeks"
+        drug2.frequency = "As needed"
+        drugs = []
+        drugs.append(drug1)
+        drugs.append(drug2)
+        patient.drugs = drugs
     else:
-        result = {
-            "a":1
-        }
+        patient.name = username
+        patient.department = department
+        patient.doctor_name = "Dr. Gacy"
+        patient.date_start_recovery = "21-08-2021"
+        patient.date_end_recovery = "31-12-2021"
+        patient.illness = "Depression"
+        patient.tax_id_code = "135-656-252"
+        drug1 = Drug()
+        drug1.name = "Amitriptyline"
+        drug1.dose = "50mg"
+        drug1.duration = "90 days"
+        drug1.frequency = "once a day"
+        drug2 = Drug()
+        drug2.name = "Diazepam"
+        drug2.dose = "5 mg"
+        drug2.duration = "20 days"
+        drug2.frequency = "as needed"
+        drugs = []
+        drugs.append(drug1)
+        drugs.append(drug2)
+        patient.drugs = drugs
 
-    return result
+    return patient
 
-@app.post("/prescriptions", summary="Get all prescriptions of one department",tags=["Doctor","Nurse"]) 
+@app.post("/prescriptions", summary="Get all prescriptions of one department",tags=["Doctor","Nurse"], response_model=list[Prescription], responses={
+            403: {"description": "You don't belong to this department or you don't have enough permissions"}, 401: {"description": "Token invalid or expired"}}) 
 async def get_prescriptions_of_department(department:str, username = Depends(check_valid_token)):
 
     verify_authorization("/prescriptions", username)
     verify_department(department, username)
 
-    if use_model:
-        result = create_data(f"Describe prescription with name of client, tax id code of client, department of the client equal to {department} and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
-    else:
-        result = [
-        {
-            'prescrizione_id': 1,
-            'nome': 'test_nome_1',
-            'cognome': 'test_cognome_1',
-            'codice_fiscale': 'test_codice_fiscale_1',
-            'farmaci': [
-                {
-                    'nome' : 'farmaco_1_1',
-                    'descrizione':'descrizione_1_1'
+    res = []
+    if username == "user1":
+        p = Prescription()
+        p.client_name = "Jane Doe"
+        p.client_tax_id_code = "123-45-6789"
+        p.department = department
+        drugs = []
+        d = Drug()
+        d.name = "Drug1"
+        d.dose = "20mg"
+        d.duration = "Once a day"
+        d.frequency = "3 weeks"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Lisinopril"
+        d.dose = "20mg"
+        d.duration = "Twice daly"
+        d.frequency = "3 months"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+        p = Prescription()
+        p.client_name = "John Smith"
+        p.client_tax_id_code = "173-48-2709"
+        p.department = department
+        drugs = []
+        d = Drug()
+        d.name = "Metoprolol"
+        d.dose = "50mg"
+        d.duration = "Twice daly"
+        d.frequency = "6 months"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Lisinopril"
+        d.dose = "5"
+        d.duration = "30 days"
+        d.frequency = "2 times/day"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+    else: #urology
+        p = Prescription()
+        p.client_name = "Alex Doe"
+        p.client_tax_id_code = "343-75-9729"
+        p.department = department
+        drugs = []
+        d = Drug()
+        d.name = "Ciprofloxacin"
+        d.dose = "500mg"
+        d.duration = "Two times a day"
+        d.frequency = "1 week"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Cephalexin"
+        d.dose = "1 g"
+        d.duration = "Four times a day"
+        d.frequency = "5 days"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+        p = Prescription()
+        p.client_name = "John Frank"
+        p.client_tax_id_code = "347-28-4641"
+        p.department = department
+        drugs = []
+        d = Drug()
+        d.name = "Darifenacin"
+        d.dose = "10mg"
+        d.duration = "Four times a day"
+        d.frequency = "6 weeks"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Mirabegron"
+        d.dose = "50 g"
+        d.duration = "12 weeks"
+        d.frequency = "2 times/day"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+    return res
 
-                },
-                {
-                    'nome' : 'farmaco_2_1',
-                    'descrizione':'descrizione_2_1'
-
-                }
-            ],
-            'data': 'test_data_1',
-            'luogo': 'test_luogo_1',
-        },
-        {
-            'prescrizione_id': 2,
-            'nome': 'test_nome_2',
-            'cognome': 'test_cognome_2',
-            'codice_fiscale': 'test_codice_fiscale_2',
-            'farmaci': [
-                {
-                    'nome' : 'farmaco_1_2',
-                    'descrizione':'descrizione_1_2'
-
-                },
-                {
-                    'nome' : 'farmaco_2_2',
-                    'descrizione':'descrizione_2_2'
-
-                }
-            ],
-            'data': 'test_data_2',
-            'luogo': 'test_luogo_2',
-        }
-        ]
-    return result
-
-@app.post("/prescription", summary="Get all prescriptions of one patient",tags=["Doctor","Nurse"]) 
+@app.post("/prescription", summary="Get all prescriptions of one patient",tags=["Doctor","Nurse"], response_model=list[Prescription], responses={
+            403: {"description": "You don't belong to this department or you don't have enough permissions"}, 401: {"description": "Token invalid or expired"}})
 async def get_patient_prescription_info(department:str, patient:str, username = Depends(check_valid_token)):
 
     verify_authorization("/prescriptions", username)
-    verify_department(department, username) 
+    verify_department(department, username)
 
-    if use_model:
-        result = create_data(f"Describe prescription with name of client equals to {patient}, tax id code of client, department of the client equal to {department} and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
-    else:
-        result = {
-            'prescrizione_id': id,
-            'nome': 'test_nome',
-            'cognome': 'test_cognome',
-            'codice_fiscale': 'test_codice_fiscale',
-            'farmaci': [
-                {
-                    'nome' : 'farmaco_1',
-                    'descrizione':'descrizione_1'
+    res = []
+    if username == "user1":
+        p = Prescription()
+        p.client_name = patient
+        p.client_tax_id_code = "123-45-6789"
+        p.department = department
+        drugs = []
+        d = Drug()
+        d.name = "Drug1"
+        d.dose = "20mg"
+        d.duration = "Once a day"
+        d.frequency = "3 weeks"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Lisinopril"
+        d.dose = "20mg"
+        d.duration = "Twice daly"
+        d.frequency = "3 months"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+        p = Prescription()
+        p.client_name = patient
+        p.client_tax_id_code = "173-48-2709"
+        p.department = department
+        drugs = []
+        d = Drug()
+        d.name = "Metoprolol"
+        d.dose = "50mg"
+        d.duration = "Twice daly"
+        d.frequency = "6 months"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Lisinopril"
+        d.dose = "5"
+        d.duration = "30 days"
+        d.frequency = "2 times/day"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+    else: #urology
+        p = Prescription()
+        p.client_name = patient
+        p.client_tax_id_code = "343-75-9729"
+        p.department = department
+        drugs = []
+        d = Drug()
+        d.name = "Ciprofloxacin"
+        d.dose = "500mg"
+        d.duration = "Two times a day"
+        d.frequency = "1 week"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Cephalexin"
+        d.dose = "1 g"
+        d.duration = "Four times a day"
+        d.frequency = "5 days"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+        p = Prescription()
+        p.client_name = patient
+        p.client_tax_id_code = "347-28-4641"
+        p.department = department
+        drugs = []
+        d = Drug()
+        d.name = "Darifenacin"
+        d.dose = "10mg"
+        d.duration = "Four times a day"
+        d.frequency = "6 weeks"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Mirabegron"
+        d.dose = "50 g"
+        d.duration = "12 weeks"
+        d.frequency = "2 times/day"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+    return res
 
-                },
-                {
-                    'nome' : 'farmaco_2',
-                    'descrizione':'descrizione_2'
-
-                }
-            ],
-            'data': 'test_data',
-            'luogo': 'test_luogo',
-        }
-    return result
-
-@app.post("/prescription/me", summary="Get all personal prescriptions",tags=["Doctor","Nurse","Patient"]) 
+@app.post("/prescription/me", summary="Get all personal prescriptions",tags=["Doctor","Nurse","Patient"], response_model=list[Prescription], responses={
+            403: {"description": "You don't have enough permissions"}, 401: {"description": "Token invalid or expired"}}) 
 async def add_new_prescription(username = Depends(check_valid_token)):
 
     verify_authorization("/prescription/me", username)
-    if use_model:
-        result = create_data(f"Describe prescription with name of client equals to {username}, tax id code of client, department of the client and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:",2)
+
+    res = []
+    if username == "user1":
+        p = Prescription()
+        p.client_name = username
+        p.client_tax_id_code = "123-45-6789"
+        p.department = "Cardiology"
+        drugs = []
+        d = Drug()
+        d.name = "Drug1"
+        d.dose = "20mg"
+        d.duration = "Once a day"
+        d.frequency = "3 weeks"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Lisinopril"
+        d.dose = "20mg"
+        d.duration = "Twice daly"
+        d.frequency = "3 months"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+        p = Prescription()
+        p.client_name = username
+        p.client_tax_id_code = "173-48-2709"
+        p.department = "Cardiology"
+        drugs = []
+        d = Drug()
+        d.name = "Metoprolol"
+        d.dose = "50mg"
+        d.duration = "Twice daly"
+        d.frequency = "6 months"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Lisinopril"
+        d.dose = "5"
+        d.duration = "30 days"
+        d.frequency = "2 times/day"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+    elif username=="user2": #urology
+        p = Prescription()
+        p.client_name = username
+        p.client_tax_id_code = "343-75-9729"
+        p.department = "Urology"
+        drugs = []
+        d = Drug()
+        d.name = "Ciprofloxacin"
+        d.dose = "500mg"
+        d.duration = "Two times a day"
+        d.frequency = "1 week"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Cephalexin"
+        d.dose = "1 g"
+        d.duration = "Four times a day"
+        d.frequency = "5 days"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+        p = Prescription()
+        p.client_name = username
+        p.client_tax_id_code = "343-75-9729"
+        p.department = "Urology"
+        drugs = []
+        d = Drug()
+        d.name = "Darifenacin"
+        d.dose = "10mg"
+        d.duration = "Four times a day"
+        d.frequency = "6 weeks"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Mirabegron"
+        d.dose = "50 g"
+        d.duration = "12 weeks"
+        d.frequency = "2 times/day"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
     else:
-        result = {
-            'prescrizione_id': id,
-            'nome': 'test_nome',
-            'cognome': 'test_cognome',
-            'codice_fiscale': 'test_codice_fiscale',
-            'farmaci': [
-                {
-                    'nome' : 'farmaco_1',
-                    'descrizione':'descrizione_1'
+        p = Prescription()
+        p.client_name = username
+        p.client_tax_id_code = "321-55-2172"
+        p.department = "Oncology"
+        drugs = []
+        d = Drug()
+        d.name = "Morphine"
+        d.dose = "5mg"
+        d.duration = "3 week"
+        d.frequency = "One time a day"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Dacomitinib"
+        d.dose = "10 mg"
+        d.duration = "5 weeks"
+        d.frequency = "Four times a day"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+        p = Prescription()
+        p.client_name = username
+        p.client_tax_id_code = "321-55-2172"
+        p.department = "Urology"
+        drugs = []
+        d = Drug()
+        d.name = "Fentanyl"
+        d.dose = "2mg"
+        d.duration = "6 weeks"
+        d.frequency = "One times a day"
+        drugs.append(d)
+        d = Drug()
+        d.name = "Pentostatin"
+        d.dose = "10 mg"
+        d.duration = "10 weeks"
+        d.frequency = "3 times/day"
+        drugs.append(d)
+        p.drugs = drugs
+        res.append(p)
+    return res
 
-                },
-                {
-                    'nome' : 'farmaco_2',
-                    'descrizione':'descrizione_2'
-
-                }
-            ],
-            'data': 'test_data',
-            'luogo': 'test_luogo',
-        }
-
-    return result
-
-@app.post("/doctors", summary="Get all doctors",tags=["Doctor","Nurse","Patient"])
+@app.post("/doctors", summary="Get all doctors",tags=["Doctor","Nurse","Patient"], response_model=list[Doctor], responses={
+            403: {"description": "You don't have enough permissions"}, 401: {"description": "Token invalid or expired"}})
 async def get_doctors(username = Depends(check_valid_token)):
 
     verify_authorization("/doctors", username)
 
-    if use_model:
-        result = create_data("Describe doctor with name, tax id code, his department, age, telephone number:",3)
-    else:
-        result = [
-            {
-                'nome': 'test_nome_1',
-                'cognome': 'test_cognome_1',
-                'codice_fiscale': 'test_codice_fiscale_1',
-                'disponibile': 'si',
-                'in_ferie' : 'no',
-                'pazienti_seguiti':[
-                    {
-                        'nome':'nome_1',
-                        'farmaci':[
-                            {
-                                'nome':'farmaco_1'
-                            }
-                        ],
-                    },
-                    {
-                        'nome':'nome_2',
-                        'farmaci':[
-                            {
-                                'nome':'farmaco_2'
-                            }
-                        ],
-                    }
-                ]
-            },
-            {
-                'nome': 'test_nome_2',
-                'cognome': 'test_cognome_2',
-                'codice_fiscale': 'test_codice_fiscale_2',
-                'disponibile': 'no',
-                'in_ferie' : 'si',
-                'pazienti_seguiti':[]
-            }
-        ]
-    return result
+    res = []
+    
+    d = Doctor()
+    d.name = "Dr. John Smith"
+    d.tax_id_code = "123-45-6780"
+    d.department = "Neurosurgery Department"
+    d.telephone_number = "(123) 456-7890"
+    d.age = "58"
+    res.append(d)
+    d = Doctor()
+    d.name = "Dr. Josh Jackson"
+    d.tax_id_code = "243-85-7720"
+    d.department = "General Surgery"
+    d.telephone_number = "(123) 466-2844"
+    d.age = "41"
+    res.append(d)
+    d = Doctor()
+    d.name = "Dr. Alexia Doe"
+    d.tax_id_code = "423-15-9746"
+    d.department = "Orthopedics"
+    d.telephone_number = "(123) 555-1395"
+    d.age = "35"
+    res.append(d)
 
-@app.post("/doctors/department", summary="Get all doctors of one department",tags=["Doctor","Nurse","Patient"])
+    return res
+
+@app.post("/doctors/department", summary="Get all doctors of one department",tags=["Doctor","Nurse","Patient"], response_model=list[Doctor], responses={
+            403: {"description": "You don't have enough permissions"}, 401: {"description": "Token invalid or expired"}})
 async def get_doctors(department:str, username = Depends(check_valid_token)):
 
     verify_authorization("/doctors", username)
 
-    if use_model:
-        result = create_data(f"Describe doctor with name, tax id code, department equals to {department}, age, telephone number:",3)
-    else:
-        result = [
-            {
-                'nome': 'test_nome_1',
-                'cognome': 'test_cognome_1',
-                'codice_fiscale': 'test_codice_fiscale_1',
-                'disponibile': 'si',
-                'in_ferie' : 'no',
-                'pazienti_seguiti':[
-                    {
-                        'nome':'nome_1',
-                        'farmaci':[
-                            {
-                                'nome':'farmaco_1'
-                            }
-                        ],
-                    },
-                    {
-                        'nome':'nome_2',
-                        'farmaci':[
-                            {
-                                'nome':'farmaco_2'
-                            }
-                        ],
-                    }
-                ]
-            },
-            {
-                'nome': 'test_nome_2',
-                'cognome': 'test_cognome_2',
-                'codice_fiscale': 'test_codice_fiscale_2',
-                'disponibile': 'no',
-                'in_ferie' : 'si',
-                'pazienti_seguiti':[]
-            }
-        ]
-    return result
+    res = []
+    
+    d = Doctor()
+    d.name = "Dr. Alex Theory"
+    d.tax_id_code = "522-15-8720"
+    d.department = department
+    d.telephone_number = "(123) 126-5670"
+    d.age = "68"
+    res.append(d)
+    d = Doctor()
+    d.name = "Dr. Josh Dowe"
+    d.tax_id_code = "233-62-2528"
+    d.department = department
+    d.telephone_number = "(123) 416-5362"
+    d.age = "35"
+    res.append(d)
+    d = Doctor()
+    d.name = "Dr. Josh Green"
+    d.tax_id_code = "226-53-6676"
+    d.department = department
+    d.telephone_number = "(133) 563-6337"
+    d.age = "30"
+    res.append(d)
+
+    return res

@@ -26,7 +26,7 @@ CLIENT_CREDENTIALS_URL = 'http://localhost:5000/client-credentials'
 CLIENT_ID = 'sample-client-id'
 CLIENT_SECRET = 'secret'
 
-# TODO: random generated
+# TODO: random generate
 CODE_VERIFIER = "samp-code-verifier"
 
 states = {}

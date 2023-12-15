@@ -8,8 +8,8 @@ import json
 #MODEL_PATH = "llama-model/llama-2-7b-chat.ggmlv3.guf.q8_0.bin"
 #MODEL_PATH = "llama-2-7b.Q4_K_M.gguf"
 #MODEL_PATH = "llama-model/llama-2-7b-ggmlv3.guf.q4_0.bin"
-#MODEL_PATH = "AC_PKCE/API_server/openorca-platypus2-13b.ggmlv3.gguf.q4_0.bin"
-MODEL_PATH = "C:/Users/zacen/Downloads/openorca-platypus2-13b.gguf.q4_0.bin"
+MODEL_PATH = "server/API_server/llama-model/openorca-platypus2-13b.ggmlv3.gguf.q4_0.bin"
+#MODEL_PATH = "C:/Users/zacen/Downloads/openorca-platypus2-13b.gguf.q4_0.bin"
 # Callbacks support token-wise streaming
 callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
@@ -53,7 +53,7 @@ num_people = 5
 people_list = []
 
 for _ in range(num_people):
-    result = llm("Describe three doctors with name, lastname and a list with one or two elements of patient with name, surname, illness, the visit date (in format DD-MM-YYYY) in JSON format:")
+    result = llm("Describe prescription with name of client equals to {username}, tax id code of client, department equals to encology and a list with one or two elements of drugs with name, dose, frequency and duration in JSON format:")
     print("RES: " + result)
     json_object = json.loads(result)
     people_list.append(json_object) #{"name": json_object['name'], "surname": json_object['surname'], "email:":json_object['email']})
