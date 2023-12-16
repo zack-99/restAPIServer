@@ -17,3 +17,8 @@ Made by:
 
 ## Client registration redirect URL
 `http://localhost:5000/callback`
+
+## API docs
+`http://localhost:8000/redoc`
+
+`http://localhost:8000/docs`
