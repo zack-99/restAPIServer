@@ -41,11 +41,11 @@ read_self, read_all, read_group, read_under (mio gruppo + quelli sotto)
 
 users_db = {
     #password: secret
-    "user1": {'username': 'user1', 'password': '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW','access_token':''},
+    "dottore": {'username': 'dottore', 'password': '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW','access_token':''},
     #password: ciao
-    "user2": {'username': 'user2', 'password': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6','access_token':''},
+    "infermiere": {'username': 'infermiere', 'password': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6','access_token':''},
     #password: ciao
-    "user3": {'username': 'user3', 'password': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6','access_token':''}
+    "paziente": {'username': 'paziente', 'password': '$2a$12$NI6.SJfjudcy44XGBue5Q.YwC0bKijENIac1VFKEL1u/RBx9xX6T6','access_token':''}
 }
 
 clients_db = {

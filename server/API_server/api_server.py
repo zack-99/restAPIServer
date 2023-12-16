@@ -57,15 +57,15 @@ class Doctor(BaseModel):
     telephone_number: str | None = "Doctor telephone_number"
 
 fake_users_db = {
-    "user1": { #Primario
+    "dottore": { #Primario
         "authorized_api": ["/patients", "/prescriptions", "/doctors", "/doctors/department", "/patient", "/patient/me", "/prescription/me"],
         "department": "Cardiologia",
     },
-    "user2": { #Infermire
-        "authorized_api": ["/doctors","/prescriptions","/patient/me","prescription/me"],
+    "infermiere": { #Infermiere
+        "authorized_api": ["/doctors","/prescriptions","/patient/me","/prescription/me"],
         "department": "Urologia",
     },
-    "user3": { #Paziente
+    "paziente": { #Paziente
         "authorized_api": ["/patient/me", "/prescription/me","/doctors"],
         "department": "Oncologia"
     },
@@ -173,7 +173,7 @@ async def get_patients_info(department:str, username = Depends(check_valid_token
     #res = list[Patient]
     res = []
 
-    if username=="user1": #Solo user1 può usare questo endpoint
+    if username=="dottore": #Solo user1 può usare questo endpoint
         #Patient 1
         patient = Patient()
         patient.name = "John Smith"
@@ -227,7 +227,7 @@ async def get_patient_info(department:str, patient:str, username = Depends(check
     verify_department(department, username)
     p = Patient()
 
-    if username=="user1": #Solo user1 può usare questo endpoint
+    if username=="dottore": #Solo user1 può usare questo endpoint
         #Patient 1
         p.name = patient
         p.department = department
@@ -264,7 +264,7 @@ async def get_patient_me_info(username = Depends(check_valid_token)):
             department = fake_users_db[user]['department']
     patient = Patient()
 
-    if username == "user1":
+    if username == "dottore":
         patient.name = username
         patient.doctor_name = "Dr. Rose"
         patient.department = department
@@ -286,7 +286,7 @@ async def get_patient_me_info(username = Depends(check_valid_token)):
         drugs.append(drug1)
         drugs.append(drug2)
         patient.drugs = drugs
-    elif username == "user2":
+    elif username == "infermiere":
         patient.name = username
         patient.doctor_name = "Dr. Dahmer"
         patient.department = department
@@ -341,7 +341,7 @@ async def get_prescriptions_of_department(department:str, username = Depends(che
     verify_department(department, username)
 
     res = []
-    if username == "user1":
+    if username == "dottore":
         p = Prescription()
         p.client_name = "Jane Doe"
         p.client_tax_id_code = "123-45-6789"
@@ -429,7 +429,7 @@ async def get_patient_prescription_info(department:str, patient:str, username = 
     verify_department(department, username)
 
     res = []
-    if username == "user1":
+    if username == "dottore":
         p = Prescription()
         p.client_name = patient
         p.client_tax_id_code = "123-45-6789"
@@ -516,7 +516,7 @@ async def add_new_prescription(username = Depends(check_valid_token)):
     verify_authorization("/prescription/me", username)
 
     res = []
-    if username == "user1":
+    if username == "dottore":
         p = Prescription()
         p.client_name = username
         p.client_tax_id_code = "123-45-6789"
@@ -555,7 +555,7 @@ async def add_new_prescription(username = Depends(check_valid_token)):
         drugs.append(d)
         p.drugs = drugs
         res.append(p)
-    elif username=="user2": #urology
+    elif username=="infermiere": #urology
         p = Prescription()
         p.client_name = username
         p.client_tax_id_code = "343-75-9729"
