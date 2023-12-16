@@ -7,7 +7,7 @@ Made by:
 - Enrico Zacchiroli
 - Lorenzo Ziosi
 
-## Docker compose
+## Usage of docker-compose
 `docker-compose -f docker-compose.yaml up`
 
 ## OAuth login credentials
