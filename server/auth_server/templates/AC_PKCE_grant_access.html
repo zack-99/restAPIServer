@@ -28,7 +28,7 @@
     }
   </style>
 </head>
-<body class="d-flex justify-content-center align-items-center h-100">
+<body class="d-flex flex-column row-gap-3 justify-content-center align-items-center h-100">
   <div class="card">
     <h5 class="card-header">Sign in to grant {{client_id}} access</h5>
     <div class="card-body">
@@ -51,6 +51,18 @@
         <input type="hidden" name="code_challenge" value="{{code_challenge}}">
         <input class="btn btn-primary" type="submit" value="Sign in">
       </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <h5 class="card-header">Registered redentials</h5>
+    <div class="card-body">
+      <ul class="list-group">
+        <li class="list-group-item d-flex justify-content-between active"><div>Username</div><div>Password</div></li>
+        <li class="list-group-item d-flex justify-content-between"><pre class="m-0">dottore</pre><pre class="m-0">secret</pre></li>
+        <li class="list-group-item d-flex justify-content-between"><pre class="m-0">infermiere</pre> <pre class="m-0">ciao</pre></li>
+        <li class="list-group-item d-flex justify-content-between"><pre class="m-0">paziente</pre> <pre class="m-0">ciao</pre></li>
+      </ul>
     </div>
   </div>
 </body>
