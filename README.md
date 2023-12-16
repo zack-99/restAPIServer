@@ -11,8 +11,8 @@ Made by:
 `docker-compose -f docker-compose.yaml up`
 
 ## OAuth login credentials
-- `dottore:secret`
-- `infermiere:ciao`
+- `dottore:secret` , appartiene al dipartimento di Cardiologia
+- `infermiere:ciao` , appartiene al dipartimento di Urologia (quindi non può vedere le informazioni riguardanti il dipartimento di cardiologia)
 - `paziente:ciao`
 
 ## Client registration redirect URL
