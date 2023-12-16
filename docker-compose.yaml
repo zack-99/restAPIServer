@@ -1,7 +1,8 @@
 version: '3'
 services:
   client:
-    image: apiclientimage
+    #image: apiclientimage
+    image: zacken1999/apiclientimage:1.0
     container_name: apiclient
     ports:
       - 5000:5000
@@ -16,7 +17,8 @@ services:
     #env_file:
     #  - .env
   authserver:
-    image: authserverimage
+    #image: authserverimage
+    image: zacken1999/authserverimage:1.0
     container_name: authserver
     ports:
       - 5001:5001
@@ -31,7 +33,8 @@ services:
     #env_file:
     #  - .env
   apiserver:
-    image: apiserverimage
+    #image: apiserverimage
+    image: zacken1999/apiserverimage:1.0
     container_name: apiserver
     ports:
       - 8000:8000
