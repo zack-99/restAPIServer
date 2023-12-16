@@ -1,2 +1,4 @@
 __pycache__/
 API_server.py/
+llama-model/
+api_server_model.py/
