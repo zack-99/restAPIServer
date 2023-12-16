@@ -7,7 +7,8 @@ Made by:
 - Enrico Zacchiroli
 - Lorenzo Ziosi
 
-## Usage of docker-compose
+## Usage
+docker-compose.yaml unico file necessario per l'avvio del sistema, utilizzabile con il comando:  
 `docker-compose -f docker-compose.yaml up`
 
 ## OAuth login credentials
