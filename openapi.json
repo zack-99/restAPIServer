@@ -1,0 +1,728 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hospital fake server",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/patients/": {
+      "post": {
+        "tags": [
+          "Doctor"
+        ],
+        "summary": "Get info about all patients of one department",
+        "operationId": "get_patients_info_patients__post",
+        "parameters": [
+          {
+            "name": "department",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Department"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Patient"
+                  },
+                  "title": "Response Get Patients Info Patients  Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token invalid or expired"
+          },
+          "403": {
+            "description": "You don't belong to this department or you don't have enough permissions"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patient": {
+      "post": {
+        "tags": [
+          "Doctor"
+        ],
+        "summary": "Get info about a patient of one department",
+        "operationId": "get_patient_info_patient_post",
+        "parameters": [
+          {
+            "name": "department",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Department"
+            }
+          },
+          {
+            "name": "patient",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Patient"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Patient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token invalid or expired"
+          },
+          "403": {
+            "description": "You don't belong to this department or you don't have enough permissions"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patient/me/": {
+      "post": {
+        "tags": [
+          "Doctor",
+          "Nurse",
+          "Patient"
+        ],
+        "summary": "Get my info as a patient",
+        "operationId": "get_patient_me_info_patient_me__post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Patient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token invalid or expired"
+          },
+          "403": {
+            "description": "You don't have enough permissions"
+          }
+        }
+      }
+    },
+    "/prescriptions": {
+      "post": {
+        "tags": [
+          "Doctor",
+          "Nurse"
+        ],
+        "summary": "Get all prescriptions of one department",
+        "operationId": "get_prescriptions_of_department_prescriptions_post",
+        "parameters": [
+          {
+            "name": "department",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Department"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Prescription"
+                  },
+                  "title": "Response Get Prescriptions Of Department Prescriptions Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token invalid or expired"
+          },
+          "403": {
+            "description": "You don't belong to this department or you don't have enough permissions"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prescription": {
+      "post": {
+        "tags": [
+          "Doctor",
+          "Nurse"
+        ],
+        "summary": "Get all prescriptions of one patient",
+        "operationId": "get_patient_prescription_info_prescription_post",
+        "parameters": [
+          {
+            "name": "department",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Department"
+            }
+          },
+          {
+            "name": "patient",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Patient"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Prescription"
+                  },
+                  "title": "Response Get Patient Prescription Info Prescription Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token invalid or expired"
+          },
+          "403": {
+            "description": "You don't belong to this department or you don't have enough permissions"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prescription/me": {
+      "post": {
+        "tags": [
+          "Doctor",
+          "Nurse",
+          "Patient"
+        ],
+        "summary": "Get all personal prescriptions",
+        "operationId": "add_new_prescription_prescription_me_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Prescription"
+                  },
+                  "type": "array",
+                  "title": "Response Add New Prescription Prescription Me Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token invalid or expired"
+          },
+          "403": {
+            "description": "You don't have enough permissions"
+          }
+        }
+      }
+    },
+    "/doctors": {
+      "post": {
+        "tags": [
+          "Doctor",
+          "Nurse",
+          "Patient"
+        ],
+        "summary": "Get all doctors",
+        "operationId": "get_doctors_doctors_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Doctor"
+                  },
+                  "type": "array",
+                  "title": "Response Get Doctors Doctors Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token invalid or expired"
+          },
+          "403": {
+            "description": "You don't have enough permissions"
+          }
+        }
+      }
+    },
+    "/doctors/department": {
+      "post": {
+        "tags": [
+          "Doctor",
+          "Nurse",
+          "Patient"
+        ],
+        "summary": "Get all doctors of one department",
+        "operationId": "get_doctors_doctors_department_post",
+        "parameters": [
+          {
+            "name": "department",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Department"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Doctor"
+                  },
+                  "title": "Response Get Doctors Doctors Department Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token invalid or expired"
+          },
+          "403": {
+            "description": "You don't have enough permissions"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Doctor": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "default": "Doctor name"
+          },
+          "tax_id_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Id Code",
+            "default": "Doctor tax_id_code"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "default": "Doctor department"
+          },
+          "age": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age",
+            "default": "Doctor age"
+          },
+          "telephone_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telephone Number",
+            "default": "Doctor telephone_number"
+          }
+        },
+        "type": "object",
+        "title": "Doctor"
+      },
+      "Drug": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "default": "Drug name"
+          },
+          "dose": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dose",
+            "default": "Drug dose"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency",
+            "default": "Drug frequency"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration",
+            "default": "Drug duration"
+          }
+        },
+        "type": "object",
+        "title": "Drug"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Patient": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "default": "Patient name"
+          },
+          "doctor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doctor Name",
+            "default": "Patient doctor_name"
+          },
+          "tax_id_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Id Code",
+            "default": "Patient tax_id_code"
+          },
+          "date_start_recovery": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Start Recovery",
+            "default": "Patient date_start_recovery"
+          },
+          "date_end_recovery": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date End Recovery",
+            "default": "Patient date_end_recovery"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "default": "Patient department"
+          },
+          "illness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Illness",
+            "default": "Patient illness"
+          },
+          "drugs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Drug"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drugs",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "Patient"
+      },
+      "Prescription": {
+        "properties": {
+          "client_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Name",
+            "default": "Prescription client_name"
+          },
+          "client_tax_id_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Tax Id Code",
+            "default": "Prescription client_tax_id_code"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "default": "Prescription department"
+          },
+          "drugs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Drug"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drugs",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "Prescription"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Doctor",
+      "description": "Operations allowed to doctors"
+    },
+    {
+      "name": "Nurse",
+      "description": "Operations allowed to nurses"
+    },
+    {
+      "name": "Patient",
+      "description": "Operations allowed to patients"
+    }
+  ]
+}
