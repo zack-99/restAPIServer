@@ -11,6 +11,8 @@ Made by:
 docker-compose.yaml è l'unico file necessario per l'avvio del sistema, utilizzabile con il comando:  
 `docker-compose -f docker-compose.yaml up`
 
+Una volta avviato recarsi alla pagina `http://localhost:5000` per visualizzare l'applicazione client
+
 ## OAuth login credentials
 - `dottore:secret` , appartiene al dipartimento di Cardiologia, API a cui può avere accesso:  
 "authorized_api": ["/patients", "/prescriptions", "/doctors", "/doctors/department", "/patient", "/patient/me", "/prescription/me"]
